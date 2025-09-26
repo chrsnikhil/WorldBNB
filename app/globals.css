@@ -2,6 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile App Styling */
+@layer base {
+  html {
+    /* Prevent zoom on iOS */
+    -webkit-text-size-adjust: 100%;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior: none;
+  }
+  
+  body {
+    /* Prevent text selection on mobile */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* Prevent context menu on long press */
+    -webkit-touch-callout: none;
+    /* Prevent bounce on iOS */
+    overscroll-behavior: none;
+  }
+  
+  /* Mobile app container */
+  .mobile-app {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    overflow: hidden;
+  }
+  
+  /* Safe area handling for mobile */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Mobile touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Smooth scrolling for mobile */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Hide scrollbars on mobile */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Mobile-specific components */
+@layer components {
+  .mobile-card {
+    @apply bg-neutral-800 rounded-2xl p-4 shadow-lg;
+  }
+  
+  .mobile-button {
+    @apply touch-target rounded-2xl font-semibold transition-all duration-200 active:scale-95;
+  }
+  
+  .mobile-input {
+    @apply bg-neutral-800 border border-neutral-700 rounded-2xl px-4 py-3 text-white placeholder-neutral-400 focus:border-orange-500 focus:outline-none;
+  }
+  
+  .mobile-nav-item {
+    @apply flex flex-col items-center space-y-1 p-2 rounded-xl transition-colors duration-200;
+  }
+  
+  .mobile-nav-item.active {
+    @apply text-orange-500;
+  }
+  
+  .mobile-nav-item:not(.active) {
+    @apply text-neutral-400 hover:text-white;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
