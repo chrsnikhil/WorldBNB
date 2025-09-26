@@ -1,15 +1,12 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
+import type React from "react"
+import type { Metadata } from "next"
+import { GeistMono } from "geist/font/mono"
+import "./globals.css"
 
 export const metadata: Metadata = {
-  title: 'WorldBNB',
-  description: 'Your global accommodation platform',
+  title: "Tactical Operations Dashboard",
+  description: "Tactical command and control system",
+    generator: 'v0.app'
 }
 
 export default function RootLayout({
@@ -18,10 +15,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
-        {children}
-      </body>
+    <html lang="es">
+      <body className={`${GeistMono.className} bg-black text-white antialiased`}>{children}</body>
     </html>
   )
 }
