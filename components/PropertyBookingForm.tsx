@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { usePayment } from '../hooks/usePayment'
+import { MiniKit } from '@worldcoin/minikit-js'
+import PropertyBookingABI from '../abi/PropertyBooking.json'
 
 interface Property {
   id: number
@@ -25,7 +26,6 @@ export default function PropertyBookingForm({ property, onBookingCreated, onClos
   const [checkOutDate, setCheckOutDate] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { bookProperty, isProcessing } = usePayment()
 
   const calculateTotal = () => {
     if (!checkInDate || !checkOutDate) return 0
@@ -43,27 +43,50 @@ export default function PropertyBookingForm({ property, onBookingCreated, onClos
     try {
       const startTimestamp = Math.floor(new Date(checkInDate).getTime() / 1000)
       const endTimestamp = Math.floor(new Date(checkOutDate).getTime() / 1000)
-      const totalAmount = calculateTotal()
 
-      // Book property with payment
-      const result = await bookProperty(
-        property.id,
-        startTimestamp,
-        endTimestamp,
-        property.host,
-        totalAmount,
-        'WLD' as any, // Using WLD token
-        `Booking for ${property.name} from ${checkInDate} to ${checkOutDate}`
-      )
+      console.log('Booking dates debug:')
+      console.log('Check-in date string:', checkInDate)
+      console.log('Check-out date string:', checkOutDate)
+      console.log('Start timestamp:', startTimestamp)
+      console.log('End timestamp:', endTimestamp)
+      console.log('Start date:', new Date(startTimestamp * 1000))
+      console.log('End date:', new Date(endTimestamp * 1000))
+      console.log('Current time:', Math.floor(Date.now() / 1000))
 
-      if (result.success) {
-        onBookingCreated(result.bookingId)
-        onClose()
-      } else {
-        setError('Booking failed. Please try again.')
+      // Generate a unique payment reference
+      const paymentReference = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+      // Send transaction directly to smart contract
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: process.env.NEXT_PUBLIC_PROPERTY_BOOKING_ADDRESS!,
+            abi: PropertyBookingABI,
+            functionName: 'createBooking',
+            args: [
+              property.id.toString(), // _propertyId
+              startTimestamp.toString(), // _checkInDate
+              endTimestamp.toString(), // _checkOutDate
+              paymentReference // _paymentReference
+            ],
+          },
+        ],
+      })
+
+      if (finalPayload.status === 'error') {
+        setError(finalPayload.error || 'Transaction failed')
+        return
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Booking failed')
+
+      // For now, we'll use a placeholder booking ID
+      // In a real implementation, you'd parse the transaction receipt to get the actual booking ID
+      const bookingId = 1 // This would come from parsing the transaction receipt
+      
+      onBookingCreated(bookingId)
+      onClose()
+      
+    } catch (err: any) {
+      setError(err.message || 'Transaction failed. Please try again.')
       console.error('Booking error:', err)
     } finally {
       setIsLoading(false)
@@ -119,7 +142,7 @@ export default function PropertyBookingForm({ property, onBookingCreated, onClos
               onChange={(e) => setCheckInDate(e.target.value)}
               min={today}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
             />
           </div>
 
@@ -133,21 +156,21 @@ export default function PropertyBookingForm({ property, onBookingCreated, onClos
               onChange={(e) => setCheckOutDate(e.target.value)}
               min={checkInDate || today}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
             />
           </div>
 
           {checkInDate && checkOutDate && (
             <div className="p-4 bg-orange-50 rounded-lg">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm text-gray-900">
                 <span>Total nights:</span>
                 <span>{Math.ceil((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24))}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm text-gray-900">
                 <span>Price per night:</span>
                 <span>{property.pricePerNight} WLD</span>
               </div>
-              <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+              <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2 text-gray-900">
                 <span>Total:</span>
                 <span className="text-orange-600">{calculateTotal()} WLD</span>
               </div>
@@ -170,10 +193,10 @@ export default function PropertyBookingForm({ property, onBookingCreated, onClos
             </button>
             <button
               type="submit"
-              disabled={isLoading || isProcessing}
+              disabled={isLoading}
               className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading || isProcessing ? 'Processing...' : 'Book & Pay'}
+              {isLoading ? 'Processing...' : 'Book Property'}
             </button>
           </div>
         </form>

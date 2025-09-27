@@ -145,7 +145,8 @@ export const usePayment = () => {
               checkInDate,
               checkOutDate,
               paymentReference: reference,
-              totalAmount: totalAmount.toString()
+              totalAmount: totalAmount.toString(),
+              guestAddress: finalPayload.from // Pass the user's wallet address
             }),
           });
           

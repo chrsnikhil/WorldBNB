@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
       console.log('📋 Found property IDs:', propertyIds.map(id => Number(id)));
     } catch (error: any) {
       if (error.code === 'BAD_DATA' && error.value === '0x') {
+        console.log('Error:', error);
         console.log('📋 No properties found (empty contract)');
         propertyIds = [];
       } else {

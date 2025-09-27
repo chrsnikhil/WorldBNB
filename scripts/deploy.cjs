@@ -18,13 +18,19 @@ async function main() {
   let deployer;
   if (signers.length === 0) {
     console.log("No signers from getSigners(), creating manual signer...");
-    if (!process.env.PRIVATE_KEY1) {
-      throw new Error("PRIVATE_KEY1 not found in environment variables.");
+    const privateKey = hre.network.name === 'worldchain' 
+      ? process.env.PRIVATE_KEY 
+      : process.env.PRIVATE_KEY1;
+    if (!privateKey) {
+      throw new Error(`Private key not found for network: ${hre.network.name}`);
     }
     
     // Create a provider and wallet manually
-    const provider = new ethers.JsonRpcProvider(process.env.WORLDCHAIN_SEPOLIA_RPC_URL);
-    deployer = new ethers.Wallet(process.env.PRIVATE_KEY1, provider);
+    const rpcUrl = hre.network.name === 'worldchain' 
+      ? process.env.WORLDCHAIN_RPC_URL 
+      : process.env.WORLDCHAIN_SEPOLIA_RPC_URL;
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    deployer = new ethers.Wallet(privateKey, provider);
     console.log("Manual signer created with address:", deployer.address);
   } else {
     deployer = signers[0];

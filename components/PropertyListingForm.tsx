@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from '@worldcoin/minikit-js'
+import { MiniKit } from '@worldcoin/minikit-js'
+import PropertyHostingABI from '../abi/PropertyHosting.json'
 
 interface PropertyFormData {
   name: string
@@ -15,10 +16,12 @@ interface PropertyFormData {
 interface PropertyListingFormProps {
   onPropertyListed: (propertyId: number) => void
   onClose: () => void
+  hostAddress?: string
 }
 
-export default function PropertyListingForm({ onPropertyListed, onClose }: PropertyListingFormProps) {
+export default function PropertyListingForm({ onPropertyListed, onClose, hostAddress }: PropertyListingFormProps) {
   console.log('🏠 PropertyListingForm component rendered!');
+  console.log('🏠 hostAddress prop:', hostAddress);
   const [formData, setFormData] = useState<PropertyFormData>({
     name: '',
     description: '',
@@ -28,112 +31,100 @@ export default function PropertyListingForm({ onPropertyListed, onClose }: Prope
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [isVerified, setIsVerified] = useState(false)
 
-  const handleWorldIDVerification = async () => {
-    if (!MiniKit.isInstalled()) {
-      setError('World App is not available. Please open this app in World App.')
-      return false
+  // Get wallet address from MiniKit or use provided hostAddress
+  const getWalletAddress = () => {
+    if (hostAddress) {
+      return hostAddress
     }
-
-    setIsVerifying(true)
-    setError(null)
-
-    try {
-      const verifyPayload: VerifyCommandInput = {
-        action: 'verifyuser', // Match your actual incognito action
-        signal: '0x1234567890abcdef', // Use hex string like in docs
-        verification_level: VerificationLevel.Orb, // Orb | Device
+    
+    // Try multiple ways to get the wallet address
+    if (typeof window !== 'undefined') {
+      // Method 1: Try MiniKit.walletAddress
+      if ((window as any).MiniKit?.walletAddress) {
+        console.log('Found wallet address via MiniKit.walletAddress:', (window as any).MiniKit.walletAddress)
+        return (window as any).MiniKit.walletAddress
       }
-
-      console.log('🔐 Starting World ID verification...')
-      console.log('Verify payload:', verifyPayload)
-      const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload)
       
-      console.log('Final payload:', finalPayload)
-      
-      if (finalPayload.status === 'error') {
-        console.error('❌ Verification error:', finalPayload)
-        setError(`Verification failed: ${finalPayload.error || 'Unknown error'}`)
-        return false
+      // Method 2: Try to get from authentication payload (if stored)
+      const authData = localStorage.getItem('worldbnb_auth')
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData)
+          if (parsed.walletAddress) {
+            console.log('Found wallet address via localStorage:', parsed.walletAddress)
+            return parsed.walletAddress
+          }
+        } catch (e) {
+          console.log('Error parsing auth data:', e)
+        }
       }
-
-      // Verify the proof in the backend
-      console.log('🔐 Verifying proof with backend...')
-      const verifyResponse = await fetch('/api/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          payload: finalPayload as ISuccessResult,
-          action: 'verifyuser', // Match your actual incognito action
-          signal: '0x1234567890abcdef',
-        }),
-      })
-
-      const verifyResponseJson = await verifyResponse.json()
-      console.log('Backend verification response:', verifyResponseJson)
       
-      if (verifyResponseJson.status === 200) {
-        console.log('✅ World ID verification successful!')
-        setIsVerified(true)
-        return true
-      } else {
-        console.error('❌ Backend verification failed:', verifyResponseJson)
-        setError(`Verification failed: ${verifyResponseJson.message || 'Unknown error'}`)
-        return false
+      // Method 3: Try to get from window object (if set elsewhere)
+      if ((window as any).userWalletAddress) {
+        console.log('Found wallet address via window.userWalletAddress:', (window as any).userWalletAddress)
+        return (window as any).userWalletAddress
       }
-    } catch (error: any) {
-      console.error('❌ Verification error:', error)
-      setError('Verification failed. Please try again.')
-      return false
-    } finally {
-      setIsVerifying(false)
     }
+    
+    console.log('No wallet address found')
+    return null
   }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // First, verify with World ID if not already verified
-    if (!isVerified) {
-      const verified = await handleWorldIDVerification()
-      if (!verified) {
-        return
-      }
-    }
     
     setIsLoading(true)
     setError(null)
 
     try {
-      // Call the API to list property
-      const response = await fetch('/api/list-property', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          location: formData.location,
-          pricePerNight: parseFloat(formData.pricePerNight),
-          imageHash: formData.imageHash || 'QmDefaultImageHash' // Default IPFS hash
-        }),
+      // Get the wallet address
+      const walletAddress = getWalletAddress()
+      if (!walletAddress) {
+        setError('Wallet address not available. Please ensure you are connected to World App and try refreshing the page.')
+        setIsLoading(false)
+        return
+      }
+
+      console.log('Using wallet address for host:', walletAddress)
+
+      // Convert price to wei (assuming price is in WLD, 18 decimals)
+      const priceInWei = (parseFloat(formData.pricePerNight) * 10**18).toString()
+
+      // Send transaction directly to smart contract
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: process.env.NEXT_PUBLIC_PROPERTY_HOSTING_ADDRESS!,
+            abi: PropertyHostingABI,
+            functionName: 'listPropertyForHost',
+            args: [
+              walletAddress, // _host (user's wallet address)
+              formData.name,
+              formData.description,
+              formData.location,
+              priceInWei, // _pricePerNight in wei
+              formData.imageHash || 'QmDefaultImageHash'
+            ],
+          },
+        ],
       })
 
-      const result = await response.json()
-
-      if (result.success) {
-        onPropertyListed(result.propertyId)
-        onClose()
-      } else {
-        setError(result.error || 'Failed to list property')
+      if (finalPayload.status === 'error') {
+        setError(finalPayload.error || 'Transaction failed')
+        return
       }
-    } catch (err) {
-      setError('Network error. Please try again.')
+
+      // For now, we'll use a placeholder property ID
+      // In a real implementation, you'd parse the transaction receipt to get the actual property ID
+      const propertyId = 1 // This would come from parsing the transaction receipt
+      
+      onPropertyListed(propertyId)
+      onClose()
+      
+    } catch (err: any) {
+      setError(err.message || 'Transaction failed. Please try again.')
       console.error('Property listing error:', err)
     } finally {
       setIsLoading(false)
@@ -251,40 +242,6 @@ export default function PropertyListingForm({ onPropertyListed, onClose }: Prope
             />
           </div>
 
-          {/* World ID Verification Status */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">World ID Verification</span>
-              {isVerified ? (
-                <div className="flex items-center text-green-600">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-sm font-medium">Verified</span>
-                </div>
-              ) : (
-                <div className="flex items-center text-orange-600">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <span className="text-sm font-medium">Not Verified</span>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-gray-600 mb-3">
-              You need to verify your identity with World ID to list a property. This helps prevent spam and ensures only verified humans can list properties.
-            </p>
-            {!isVerified && (
-              <button
-                type="button"
-                onClick={handleWorldIDVerification}
-                disabled={isVerifying}
-                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-              >
-                {isVerifying ? 'Verifying...' : 'Verify with World ID'}
-              </button>
-            )}
-          </div>
 
           {error && (
             <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
@@ -302,10 +259,10 @@ export default function PropertyListingForm({ onPropertyListed, onClose }: Prope
             </button>
             <button
               type="submit"
-              disabled={isLoading || !isVerified}
+              disabled={isLoading}
               className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? 'Listing...' : isVerified ? 'List Property' : 'Verify First'}
+              {isLoading ? 'Listing...' : 'List Property'}
             </button>
           </div>
         </form>

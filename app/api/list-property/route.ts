@@ -4,14 +4,15 @@ import { ethers } from 'ethers';
 // Contract ABI for PropertyHosting
 const PROPERTY_HOSTING_ABI = [
   "function listProperty(string memory _name, string memory _description, string memory _location, uint256 _pricePerNight, string memory _imageHash) external returns (uint256)",
+  "function listPropertyForHost(address _host, string memory _name, string memory _description, string memory _location, uint256 _pricePerNight, string memory _imageHash) external returns (uint256)",
   "function getProperty(uint256 _propertyId) external view returns (tuple(uint256 id, address host, string name, string description, string location, uint256 pricePerNight, bool isActive, uint256 createdAt, string imageHash))"
 ];
 
 export async function POST(req: NextRequest) {
   try {
     console.log('🏠 Property listing request received');
-    const { name, description, location, pricePerNight, imageHash } = await req.json();
-    console.log('📝 Property details:', { name, description, location, pricePerNight, imageHash });
+    const { name, description, location, pricePerNight, imageHash, hostAddress } = await req.json();
+    console.log('📝 Property details:', { name, description, location, pricePerNight, imageHash, hostAddress });
 
     if (!process.env.PRIVATE_KEY || !process.env.WORLDCHAIN_RPC_URL || !process.env.PROPERTY_HOSTING_ADDRESS) {
       console.log('❌ Missing environment variables');
@@ -19,6 +20,14 @@ export async function POST(req: NextRequest) {
         success: false, 
         error: 'Server not configured for property listing' 
       }, { status: 500 });
+    }
+
+    if (!hostAddress) {
+      console.log('❌ Host address is required');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Host address is required' 
+      }, { status: 400 });
     }
 
     // Connect to local Hardhat network
@@ -43,8 +52,9 @@ export async function POST(req: NextRequest) {
     console.log('📍 Contract address:', process.env.PROPERTY_HOSTING_ADDRESS);
     console.log('🌐 RPC URL:', process.env.WORLDCHAIN_RPC_URL);
     
-    console.log('📤 Listing property on-chain...');
-    const tx = await propertyHosting.listProperty(
+    console.log('📤 Listing property on-chain for host:', hostAddress);
+    const tx = await propertyHosting.listPropertyForHost(
+      hostAddress, // Use the provided host address
       name,
       description,
       location,

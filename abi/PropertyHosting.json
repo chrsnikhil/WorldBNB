@@ -1,0 +1,16 @@
+[
+  {
+    "inputs": [
+      {"internalType": "address", "name": "_host", "type": "address"},
+      {"internalType": "string", "name": "_name", "type": "string"},
+      {"internalType": "string", "name": "_description", "type": "string"},
+      {"internalType": "string", "name": "_location", "type": "string"},
+      {"internalType": "uint256", "name": "_pricePerNight", "type": "uint256"},
+      {"internalType": "string", "name": "_imageHash", "type": "string"}
+    ],
+    "name": "listPropertyForHost",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

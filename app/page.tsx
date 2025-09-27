@@ -10,6 +10,8 @@ import PropertyBookingForm from "../components/PropertyBookingForm"
 import PropertyDetailsModal from "../components/PropertyDetailsModal"
 import SuccessModal from "../components/SuccessModal"
 import ModalPortal from "../components/ModalPortal"
+import DirectTransactionTest from "../components/DirectTransactionTest"
+import SimpleTransactionTest from "../components/SimpleTransactionTest"
 
 interface User {
   walletAddress?: string;
@@ -41,6 +43,8 @@ function WorldBNBLanding() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('home') // 'home', 'send', 'receive', 'host', 'properties'
   const [properties, setProperties] = useState<Property[]>([])
+  const [bookings, setBookings] = useState<any[]>([])
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false)
   const [showPropertyForm, setShowPropertyForm] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [showBookingForm, setShowBookingForm] = useState(false)
@@ -60,6 +64,7 @@ function WorldBNBLanding() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchProperties()
+      fetchBookings()
     }
   }, [isAuthenticated])
 
@@ -81,6 +86,21 @@ function WorldBNBLanding() {
     }
   }
 
+  const fetchBookings = async () => {
+    try {
+      setIsLoadingBookings(true)
+      const response = await fetch('/api/get-bookings')
+      const data = await response.json()
+      if (data.success) {
+        setBookings(data.bookings)
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+    } finally {
+      setIsLoadingBookings(false)
+    }
+  }
+
   const handlePropertyListed = (propertyId: number) => {
     console.log('Property listed with ID:', propertyId)
     setShowPropertyForm(false) // Close the modal
@@ -88,7 +108,7 @@ function WorldBNBLanding() {
     
     // Show success modal
     setSuccessTitle("Property Listed Successfully!")
-    setSuccessMessage("Your property has been listed on the blockchain and is now available for booking.")
+    setSuccessMessage(`Your property has been listed with ID: ${propertyId}. It is now available for booking on the blockchain.`)
     setSuccessPropertyId(propertyId)
     setShowSuccessModal(true)
     
@@ -108,9 +128,13 @@ function WorldBNBLanding() {
   }
 
   const handleBookingCreated = (bookingId: number) => {
-    console.log('Booking created with ID:', bookingId)
-    // You could add booking management here
+    console.log('🎉 Main component handleBookingCreated called with bookingId:', bookingId)
+    // Just dispatch the event to GlobalModals - let GlobalModals handle the success modal
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'bookingCreated', value: bookingId }
+    }));
   }
+
 
   const openBookingForm = (property: Property) => {
     setSelectedProperty(property)
@@ -556,6 +580,12 @@ function WorldBNBLanding() {
                             window.dispatchEvent(new CustomEvent('stateChange', {
                               detail: { type: 'showPropertyForm', value: true }
                             }));
+                            // Also pass the wallet address
+                            if (user?.walletAddress) {
+                              window.dispatchEvent(new CustomEvent('stateChange', {
+                                detail: { type: 'userWalletAddress', value: user.walletAddress }
+                              }));
+                            }
                           } else {
                             console.error('❌ Backend verification failed:', verifyResponseJson);
                             alert(`Backend verification failed: ${verifyResponseJson.message || 'Unknown error'}`);
@@ -604,6 +634,26 @@ function WorldBNBLanding() {
                       ))}
                     </div>
                   )}
+                </motion.div>
+                
+                {/* Simple Transaction Test */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="mt-6"
+                >
+                  <SimpleTransactionTest walletAddress={user?.walletAddress} />
+                </motion.div>
+                
+                {/* Direct Transaction Test */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
+                  className="mt-4"
+                >
+                  <DirectTransactionTest walletAddress={user?.walletAddress} />
                 </motion.div>
               </motion.div>
             )}
@@ -743,6 +793,30 @@ function WorldBNBLanding() {
                               <div className="text-neutral-500 text-xs">
                                 {new Date(property.createdAt * 1000).toLocaleDateString()}
                               </div>
+                            </div>
+                            
+                            {/* Book Now Button */}
+                            <div className="mt-3 pt-3 border-t border-neutral-600">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent opening property details
+                                  setSelectedProperty(property);
+                                  setShowBookingForm(true);
+                                  // Dispatch event to global modal
+                                  window.dispatchEvent(new CustomEvent('stateChange', {
+                                    detail: { type: 'selectedProperty', value: property }
+                                  }));
+                                  window.dispatchEvent(new CustomEvent('stateChange', {
+                                    detail: { type: 'showBookingForm', value: true }
+                                  }));
+                                }}
+                                className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors font-semibold text-sm flex items-center justify-center space-x-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>Book Now</span>
+                              </button>
                             </div>
                           </div>
                         </motion.div>
@@ -932,6 +1006,156 @@ function WorldBNBLanding() {
               </motion.div>
             )}
 
+            {activeTab === 'bookings' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="space-y-4"
+              >
+                {/* Bookings Header */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold mb-2">Your Bookings</h2>
+                      <p className="text-blue-100">Manage your upcoming and past stays</p>
+                    </div>
+                    <button
+                      onClick={fetchBookings}
+                      disabled={isLoadingBookings}
+                      className={`bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors ${
+                        isLoadingBookings ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                      title="Refresh bookings"
+                    >
+                      {isLoadingBookings ? (
+                        <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{bookings.length}</div>
+                      <div className="text-blue-200 text-sm">Total Bookings</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">
+                        {bookings.filter((booking: any) => booking.status === 'confirmed').length}
+                      </div>
+                      <div className="text-blue-200 text-sm">Confirmed</div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Bookings List */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="space-y-4"
+                >
+                  {isLoadingBookings ? (
+                    <div className="bg-neutral-800 rounded-xl p-8 text-center">
+                      <div className="w-16 h-16 bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-neutral-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Loading bookings...</h3>
+                      <p className="text-neutral-400">Fetching your booking history from the blockchain</p>
+                    </div>
+                  ) : bookings.length === 0 ? (
+                    <div className="bg-neutral-800 rounded-xl p-8 text-center">
+                      <div className="w-16 h-16 bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">No bookings yet</h3>
+                      <p className="text-neutral-400 mb-4">Start exploring properties and make your first booking!</p>
+                      <button
+                        onClick={() => setActiveTab('properties')}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Browse Properties
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {bookings.map((booking: any, index: number) => (
+                        <motion.div
+                          key={booking.id || index}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: 0.1 * index }}
+                          className="bg-neutral-800 rounded-xl p-4 border border-neutral-700"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-white">Property #{booking.propertyId}</h3>
+                                  <p className="text-neutral-400 text-sm">Booking ID: {booking.id || 'N/A'}</p>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4 mb-3">
+                                <div>
+                                  <p className="text-neutral-400 text-sm">Check-in</p>
+                                  <p className="text-white font-medium">
+                                    {new Date(booking.checkInDate * 1000).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-neutral-400 text-sm">Check-out</p>
+                                  <p className="text-white font-medium">
+                                    {new Date(booking.checkOutDate * 1000).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    booking.status === 'confirmed' 
+                                      ? 'bg-green-500/20 text-green-400' 
+                                      : booking.status === 'pending'
+                                      ? 'bg-yellow-500/20 text-yellow-400'
+                                      : 'bg-neutral-500/20 text-neutral-400'
+                                  }`}>
+                                    {booking.status === 'confirmed' ? 'Confirmed' : booking.status === 'pending' ? 'Pending' : 'Cancelled'}
+                                  </span>
+                                  <span className="text-neutral-400 text-sm">
+                                    {booking.totalAmount} WLD
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              </motion.div>
+            )}
+
             {/* Quick Stats */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -1064,13 +1288,13 @@ function WorldBNBLanding() {
                 <span className="text-xs">Reviews</span>
               </button>
               <button 
-                onClick={signOut}
-                className="mobile-nav-item"
+                onClick={() => setActiveTab('bookings')}
+                className={`mobile-nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span className="text-xs">Profile</span>
+                <span className="text-xs">Bookings</span>
               </button>
             </div>
           </div>
@@ -1206,6 +1430,41 @@ function GlobalModals() {
   const [successMessage, setSuccessMessage] = useState("")
   const [successTitle, setSuccessTitle] = useState("")
   const [successPropertyId, setSuccessPropertyId] = useState<number | undefined>(undefined)
+  const [userWalletAddress, setUserWalletAddress] = useState<string | null>(null)
+
+  const handleBookingCreated = (bookingId: number) => {
+    console.log('🎉 GlobalModals handleBookingCreated called with bookingId:', bookingId)
+    setShowBookingForm(false) // Close the modal
+    
+    // Refresh bookings list
+    fetchBookings()
+    
+    // Show success modal
+    console.log('🎉 GlobalModals setting success modal with bookingId:', bookingId)
+    setSuccessTitle("Booking Confirmed!")
+    setSuccessMessage(`Your booking has been confirmed with ID: ${bookingId}. Payment has been processed and you will receive booking details shortly.`)
+    setSuccessPropertyId(bookingId)
+    setShowSuccessModal(true)
+    console.log('🎉 GlobalModals success modal should be visible now')
+    console.log('🎉 showSuccessModal state:', true)
+    console.log('🎉 successTitle:', "Booking Confirmed!")
+    console.log('🎉 successMessage:', `Your booking has been confirmed with ID: ${bookingId}. Payment has been processed and you will receive booking details shortly.`)
+    console.log('🎉 successPropertyId:', bookingId)
+    
+    // Dispatch events to main component
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'successTitle', value: "Booking Confirmed!" }
+    }));
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'successMessage', value: "Your booking has been confirmed and payment has been processed. You will receive booking details shortly." }
+    }));
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'successPropertyId', value: bookingId }
+    }));
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'showSuccessModal', value: true }
+    }));
+  }
 
   // Listen for state changes from the main component
   useEffect(() => {
@@ -1237,6 +1496,14 @@ function GlobalModals() {
       if (event.detail.type === 'successPropertyId') {
         setSuccessPropertyId(event.detail.value)
       }
+      if (event.detail.type === 'userWalletAddress') {
+        setUserWalletAddress(event.detail.value)
+        console.log('GlobalModals received wallet address:', event.detail.value)
+      }
+      if (event.detail.type === 'bookingCreated') {
+        console.log('🎉 GlobalModals received bookingCreated event with bookingId:', event.detail.value)
+        handleBookingCreated(event.detail.value)
+      }
     }
 
     window.addEventListener('stateChange', handleStateChange as EventListener)
@@ -1249,6 +1516,7 @@ function GlobalModals() {
       {showPropertyForm && (
         <ModalPortal>
           <PropertyListingForm
+            hostAddress={userWalletAddress || undefined}
             onPropertyListed={(propertyId: number) => {
               setShowPropertyForm(false);
               // Dispatch event to close modal
@@ -1261,7 +1529,7 @@ function GlobalModals() {
                 detail: { type: 'successTitle', value: "Property Listed Successfully!" }
               }));
               window.dispatchEvent(new CustomEvent('stateChange', {
-                detail: { type: 'successMessage', value: "Your property has been listed on the blockchain and is now available for booking." }
+                detail: { type: 'successMessage', value: `Your property has been listed with ID: ${propertyId}. It is now available for booking on the blockchain.` }
               }));
               window.dispatchEvent(new CustomEvent('stateChange', {
                 detail: { type: 'successPropertyId', value: propertyId }
@@ -1286,7 +1554,7 @@ function GlobalModals() {
         <ModalPortal>
           <PropertyBookingForm
             property={selectedProperty}
-            onBookingCreated={() => {}}
+            onBookingCreated={handleBookingCreated}
             onClose={() => {
               setShowBookingForm(false)
               setSelectedProperty(null)

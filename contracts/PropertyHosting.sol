@@ -76,6 +76,42 @@ contract PropertyHosting is ReentrancyGuard, Ownable {
         return propertyId;
     }
 
+    function listPropertyForHost(
+        address _host,
+        string memory _name,
+        string memory _description,
+        string memory _location,
+        uint256 _pricePerNight,
+        string memory _imageHash
+    ) external returns (uint256) {
+        require(_host != address(0), "Host address cannot be zero");
+        require(bytes(_name).length > 0, "Name cannot be empty");
+        require(bytes(_description).length > 0, "Description cannot be empty");
+        require(bytes(_location).length > 0, "Location cannot be empty");
+        require(_pricePerNight > 0, "Price must be greater than 0");
+
+        uint256 propertyId = nextPropertyId++;
+        
+        Property storage newProperty = properties[propertyId];
+        newProperty.id = propertyId;
+        newProperty.host = _host; // Use the provided host address
+        newProperty.name = _name;
+        newProperty.description = _description;
+        newProperty.location = _location;
+        newProperty.pricePerNight = _pricePerNight;
+        newProperty.isActive = true;
+        newProperty.createdAt = block.timestamp;
+        newProperty.imageHash = _imageHash;
+
+        // Add to host's properties and all properties
+        hostProperties[_host].push(propertyId);
+        allPropertyIds.push(propertyId);
+
+        emit PropertyListed(propertyId, _host, _name, _pricePerNight);
+        
+        return propertyId;
+    }
+
     function updateProperty(
         uint256 _propertyId,
         string memory _name,
