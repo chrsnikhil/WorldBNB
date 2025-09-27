@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\chrsn\\Desktop\\WorldBNB\\contracts\\PropertyBooking.sol": {
-      "lastModificationDate": 1758961694759,
-      "contentHash": "f83c5c1673466f5c41fcbe23b07ec94a",
+      "lastModificationDate": 1758975210535,
+      "contentHash": "bd490b6d74f64ceb99d9512eb320ae2f",
       "sourceName": "contracts/PropertyBooking.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -193,6 +193,87 @@
       ],
       "artifacts": [
         "Context"
+      ]
+    },
+    "C:\\Users\\chrsn\\Desktop\\WorldBNB\\contracts\\DisputeResolution.sol": {
+      "lastModificationDate": 1758981371410,
+      "contentHash": "243c6ad4cdd89c39dda9cf734aac509b",
+      "sourceName": "contracts/DisputeResolution.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "./WorldBNBStaking.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DisputeResolution"
+      ]
+    },
+    "C:\\Users\\chrsn\\Desktop\\WorldBNB\\contracts\\WorldBNBStaking.sol": {
+      "lastModificationDate": 1758981297021,
+      "contentHash": "6fcad3d21ec3dde8beecd3321fd4a8d5",
+      "sourceName": "contracts/WorldBNBStaking.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "WorldBNBStaking"
       ]
     }
   }

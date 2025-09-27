@@ -71,11 +71,21 @@ export default function PropertyBookingForm({ property, onBookingCreated, onClos
             ],
           },
         ],
+        formatPayload: false, // Use false as per docs when issues occur
       })
 
       if (finalPayload.status === 'error') {
-        setError(finalPayload.error || 'Transaction failed')
-        return
+        console.error('Transaction failed:', finalPayload);
+        
+        // Check if there's a debug URL
+        if (finalPayload.debug_url) {
+          console.log('Debug URL:', finalPayload.debug_url);
+          setError(`Transaction simulation failed. Check debug URL: ${finalPayload.debug_url}`);
+          return;
+        }
+        
+        setError(finalPayload.error || 'Transaction simulation failed');
+        return;
       }
 
       // For now, we'll use a placeholder booking ID
@@ -170,9 +180,24 @@ export default function PropertyBookingForm({ property, onBookingCreated, onClos
                 <span>Price per night:</span>
                 <span>{property.pricePerNight} WLD</span>
               </div>
+              <div className="flex justify-between text-sm text-gray-900">
+                <span>Subtotal:</span>
+                <span>{calculateTotal()} WLD</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-900">
+                <span>Platform fee (3%):</span>
+                <span className="text-red-600">-{(calculateTotal() * 0.03).toFixed(2)} WLD</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-900">
+                <span>Host receives:</span>
+                <span className="text-green-600">{(calculateTotal() * 0.97).toFixed(2)} WLD</span>
+              </div>
               <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2 text-gray-900">
-                <span>Total:</span>
+                <span>You pay:</span>
                 <span className="text-orange-600">{calculateTotal()} WLD</span>
+              </div>
+              <div className="text-xs text-gray-600 mt-2">
+                💡 Your payment goes to escrow. Host can claim funds after check-in.
               </div>
             </div>
           )}

@@ -109,11 +109,21 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
             ],
           },
         ],
+        formatPayload: false, // Use false as per docs when issues occur
       })
 
       if (finalPayload.status === 'error') {
-        setError(finalPayload.error || 'Transaction failed')
-        return
+        console.error('Transaction failed:', finalPayload);
+        
+        // Check if there's a debug URL
+        if (finalPayload.debug_url) {
+          console.log('Debug URL:', finalPayload.debug_url);
+          setError(`Transaction simulation failed. Check debug URL: ${finalPayload.debug_url}`);
+          return;
+        }
+        
+        setError(finalPayload.error || 'Transaction simulation failed');
+        return;
       }
 
       // For now, we'll use a placeholder property ID

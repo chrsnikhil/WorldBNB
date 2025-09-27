@@ -10,8 +10,8 @@ import PropertyBookingForm from "../components/PropertyBookingForm"
 import PropertyDetailsModal from "../components/PropertyDetailsModal"
 import SuccessModal from "../components/SuccessModal"
 import ModalPortal from "../components/ModalPortal"
-import DirectTransactionTest from "../components/DirectTransactionTest"
-import SimpleTransactionTest from "../components/SimpleTransactionTest"
+import HostClaimFunds from "../components/HostClaimFunds"
+import DisputeManager from "../components/DisputeManager"
 
 interface User {
   walletAddress?: string;
@@ -72,6 +72,16 @@ function WorldBNBLanding() {
   useEffect(() => {
     console.log('🔄 showPropertyForm changed to:', showPropertyForm);
   }, [showPropertyForm])
+
+  // Listen for refresh bookings event
+  useEffect(() => {
+    const handleRefreshBookings = () => {
+      fetchBookings()
+    }
+
+    window.addEventListener('refreshBookings', handleRefreshBookings)
+    return () => window.removeEventListener('refreshBookings', handleRefreshBookings)
+  }, [])
 
 
   const fetchProperties = async () => {
@@ -557,7 +567,7 @@ function WorldBNBLanding() {
                           
                           if (finalPayload.status === 'error') {
                             console.error('❌ Verification failed:', finalPayload);
-                            alert(`Verification failed: ${finalPayload.error || 'Unknown error'}`);
+                            alert(`Verification failed: ${JSON.stringify(finalPayload) || 'Unknown error'}`);
                             return;
                           }
                           
@@ -636,25 +646,6 @@ function WorldBNBLanding() {
                   )}
                 </motion.div>
                 
-                {/* Simple Transaction Test */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.6 }}
-                  className="mt-6"
-                >
-                  <SimpleTransactionTest walletAddress={user?.walletAddress} />
-                </motion.div>
-                
-                {/* Direct Transaction Test */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.7 }}
-                  className="mt-4"
-                >
-                  <DirectTransactionTest walletAddress={user?.walletAddress} />
-                </motion.div>
               </motion.div>
             )}
 
@@ -1058,6 +1049,58 @@ function WorldBNBLanding() {
                   </div>
                 </motion.div>
 
+                {/* Host Claim Funds Section */}
+                <HostClaimFunds 
+                  bookings={bookings} 
+                  onClaimFunds={async (bookingId) => {
+                    try {
+                      console.log('Claiming funds for booking:', bookingId)
+                      
+                      // Call the smart contract to claim funds
+                      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+                        transaction: [
+                          {
+                            address: process.env.NEXT_PUBLIC_PROPERTY_BOOKING_ADDRESS!,
+                            abi: [
+                              {
+                                "inputs": [{"internalType": "uint256", "name": "_bookingId", "type": "uint256"}],
+                                "name": "claimHostFunds",
+                                "outputs": [],
+                                "stateMutability": "nonpayable",
+                                "type": "function"
+                              }
+                            ],
+                            functionName: 'claimHostFunds',
+                            args: [bookingId.toString()],
+                          },
+                        ],
+                        formatPayload: true, // Use default formatting as per docs
+                      })
+
+                      if (finalPayload.status === 'error') {
+                        throw new Error(JSON.stringify(finalPayload) || 'Failed to claim funds')
+                      }
+
+                      console.log('Funds claimed successfully!')
+                      // Refresh bookings to update the UI
+                      fetchBookings()
+                      
+                    } catch (error) {
+                      console.error('Error claiming funds:', error)
+                      throw error
+                    }
+                  }}
+                />
+
+                {/* Dispute Manager */}
+                <DisputeManager 
+                  userAddress={user?.walletAddress}
+                  bookings={bookings}
+                  onDisputeCreated={() => {
+                    console.log('Dispute created successfully!')
+                  }}
+                />
+
                 {/* Bookings List */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -1436,8 +1479,8 @@ function GlobalModals() {
     console.log('🎉 GlobalModals handleBookingCreated called with bookingId:', bookingId)
     setShowBookingForm(false) // Close the modal
     
-    // Refresh bookings list
-    fetchBookings()
+    // Dispatch event to refresh bookings in main component
+    window.dispatchEvent(new CustomEvent('refreshBookings'))
     
     // Show success modal
     console.log('🎉 GlobalModals setting success modal with bookingId:', bookingId)

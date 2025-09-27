@@ -62,25 +62,47 @@ async function main() {
     console.error("❌ Contract verification failed:", error.message);
   }
 
-  // Deploy PropertyBooking contract
+  // Deploy PropertyBooking contract with platform wallet
   const PropertyBooking = await ethers.getContractFactory("PropertyBooking");
-  const propertyBooking = await PropertyBooking.connect(deployer).deploy(propertyHostingAddress);
+  const propertyBooking = await PropertyBooking.connect(deployer).deploy(propertyHostingAddress, deployer.address);
   await propertyBooking.waitForDeployment();
   
   const propertyBookingAddress = await propertyBooking.getAddress();
   console.log("PropertyBooking deployed to:", propertyBookingAddress);
+
+  // Deploy WorldBNBStaking contract
+  console.log("Deploying WorldBNBStaking contract...");
+  const WorldBNBStaking = await ethers.getContractFactory("WorldBNBStaking");
+  const stakingContract = await WorldBNBStaking.connect(deployer).deploy();
+  await stakingContract.waitForDeployment();
+  
+  const stakingAddress = await stakingContract.getAddress();
+  console.log("WorldBNBStaking deployed to:", stakingAddress);
+
+  // Deploy DisputeResolution contract
+  console.log("Deploying DisputeResolution contract...");
+  const DisputeResolution = await ethers.getContractFactory("DisputeResolution");
+  const disputeContract = await DisputeResolution.connect(deployer).deploy(stakingAddress);
+  await disputeContract.waitForDeployment();
+  
+  const disputeAddress = await disputeContract.getAddress();
+  console.log("DisputeResolution deployed to:", disputeAddress);
 
   // Save deployment addresses
   const deploymentInfo = {
     network: "worldchain",
     propertyHosting: propertyHostingAddress,
     propertyBooking: propertyBookingAddress,
+    staking: stakingAddress,
+    disputeResolution: disputeAddress,
     deployedAt: new Date().toISOString()
   };
 
   console.log("\n=== Deployment Complete ===");
   console.log("PropertyHosting:", propertyHostingAddress);
   console.log("PropertyBooking:", propertyBookingAddress);
+  console.log("WorldBNBStaking:", stakingAddress);
+  console.log("DisputeResolution:", disputeAddress);
   console.log("\nSave these addresses for your frontend integration!");
 
   return deploymentInfo;

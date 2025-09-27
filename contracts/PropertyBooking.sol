@@ -14,8 +14,11 @@ contract PropertyBooking is ReentrancyGuard, Ownable {
         uint256 checkInDate;
         uint256 checkOutDate;
         uint256 totalAmount;
+        uint256 platformFee;        // Fee taken by platform
+        uint256 hostAmount;          // Amount sent to host
         bool isConfirmed;
         bool isCancelled;
+        bool fundsReleased;          // Whether funds have been released
         uint256 createdAt;
         string paymentReference; // WorldCoin payment reference
     }
@@ -29,11 +32,15 @@ contract PropertyBooking is ReentrancyGuard, Ownable {
         uint256 checkInDate,
         uint256 checkOutDate,
         uint256 totalAmount,
+        uint256 platformFee,
+        uint256 hostAmount,
         string paymentReference
     );
     
     event BookingConfirmed(uint256 indexed bookingId, address indexed host);
     event BookingCancelled(uint256 indexed bookingId, address indexed guest, string reason);
+    event FundsReleased(uint256 indexed bookingId, address indexed host, uint256 amount);
+    event GuestRefunded(uint256 indexed bookingId, address indexed guest, uint256 amount);
 
     // State variables
     uint256 public nextBookingId = 1;
@@ -44,6 +51,11 @@ contract PropertyBooking is ReentrancyGuard, Ownable {
     mapping(string => uint256) public paymentReferenceToBooking; // payment reference => booking ID
     
     PropertyHosting public propertyHosting;
+    
+    // Platform configuration
+    uint256 public platformFeeBasisPoints = 300; // 3% (300 basis points)
+    address public platformWallet;
+    uint256 public totalPlatformFees; // Total fees collected by platform
 
     // Modifiers
     modifier onlyBookingGuest(uint256 _bookingId) {
@@ -68,8 +80,9 @@ contract PropertyBooking is ReentrancyGuard, Ownable {
         _;
     }
 
-    constructor(address _propertyHostingAddress) Ownable(msg.sender) {
+    constructor(address _propertyHostingAddress, address _platformWallet) Ownable(msg.sender) {
         propertyHosting = PropertyHosting(_propertyHostingAddress);
+        platformWallet = _platformWallet;
     }
 
     function createBooking(
@@ -87,10 +100,14 @@ contract PropertyBooking is ReentrancyGuard, Ownable {
         // Check if dates are available
         require(isDateRangeAvailable(_propertyId, _checkInDate, _checkOutDate), "Dates are not available");
 
-        // Calculate total amount
+        // Calculate total amount and fees
         uint256 nights = (_checkOutDate - _checkInDate) / 1 days;
         uint256 totalAmount = property.pricePerNight * nights;
         require(totalAmount > 0, "Invalid booking amount");
+
+        // Calculate platform fee (3% by default)
+        uint256 platformFee = (totalAmount * platformFeeBasisPoints) / 10000;
+        uint256 hostAmount = totalAmount - platformFee;
 
         // Verify payment reference is unique
         require(paymentReferenceToBooking[_paymentReference] == 0, "Payment reference already used");
@@ -105,8 +122,11 @@ contract PropertyBooking is ReentrancyGuard, Ownable {
         newBooking.checkInDate = _checkInDate;
         newBooking.checkOutDate = _checkOutDate;
         newBooking.totalAmount = totalAmount;
+        newBooking.platformFee = platformFee;
+        newBooking.hostAmount = hostAmount;
         newBooking.isConfirmed = false;
         newBooking.isCancelled = false;
+        newBooking.fundsReleased = false;
         newBooking.createdAt = block.timestamp;
         newBooking.paymentReference = _paymentReference;
 
@@ -128,6 +148,8 @@ contract PropertyBooking is ReentrancyGuard, Ownable {
             _checkInDate,
             _checkOutDate,
             totalAmount,
+            platformFee,
+            hostAmount,
             _paymentReference
         );
 
@@ -254,5 +276,100 @@ contract PropertyBooking is ReentrancyGuard, Ownable {
         returns (bool) 
     {
         return isDateRangeAvailable(_propertyId, _checkIn, _checkOut);
+    }
+
+    // Escrow functions - Host can claim their funds
+    function claimHostFunds(uint256 _bookingId) 
+        external 
+        bookingExists(_bookingId) 
+        onlyBookingHost(_bookingId)
+        nonReentrant 
+    {
+        Booking storage booking = bookings[_bookingId];
+        require(booking.isConfirmed, "Booking must be confirmed");
+        require(!booking.fundsReleased, "Funds already claimed");
+        require(!booking.isCancelled, "Booking is cancelled");
+        require(block.timestamp >= booking.checkInDate, "Cannot claim before check-in");
+
+        booking.fundsReleased = true;
+
+        // Transfer platform fee to platform wallet (accumulate for later withdrawal)
+        if (booking.platformFee > 0) {
+            totalPlatformFees += booking.platformFee;
+        }
+
+        // Transfer host amount to host
+        if (booking.hostAmount > 0) {
+            // Note: In a real implementation, you'd transfer WLD tokens here
+            // payable(booking.host).transfer(booking.hostAmount);
+        }
+
+        emit FundsReleased(_bookingId, booking.host, booking.hostAmount);
+    }
+
+    function refundGuest(uint256 _bookingId) 
+        external 
+        bookingExists(_bookingId) 
+        onlyOwner 
+        nonReentrant 
+    {
+        Booking storage booking = bookings[_bookingId];
+        require(!booking.fundsReleased, "Funds already released");
+        require(booking.isCancelled, "Booking must be cancelled to refund");
+
+        // Refund the full amount to guest
+        // Note: In a real implementation, you'd transfer WLD tokens here
+        // payable(booking.guest).transfer(booking.totalAmount);
+
+        emit GuestRefunded(_bookingId, booking.guest, booking.totalAmount);
+    }
+
+    // Platform management functions
+    function setPlatformFee(uint256 _newFeeBasisPoints) external onlyOwner {
+        require(_newFeeBasisPoints <= 1000, "Fee cannot exceed 10%"); // Max 10%
+        platformFeeBasisPoints = _newFeeBasisPoints;
+    }
+
+    function setPlatformWallet(address _newPlatformWallet) external onlyOwner {
+        require(_newPlatformWallet != address(0), "Invalid platform wallet");
+        platformWallet = _newPlatformWallet;
+    }
+
+    function withdrawPlatformFees() external onlyOwner {
+        require(totalPlatformFees > 0, "No fees to withdraw");
+        uint256 amount = totalPlatformFees;
+        totalPlatformFees = 0;
+        // Note: In a real implementation, you'd transfer WLD tokens here
+        // payable(platformWallet).transfer(amount);
+    }
+
+    // View functions for escrow
+    function getBookingEscrowInfo(uint256 _bookingId) 
+        external 
+        view 
+        bookingExists(_bookingId) 
+        returns (
+            uint256 totalAmount,
+            uint256 platformFee,
+            uint256 hostAmount,
+            bool fundsReleased,
+            bool canClaim
+        ) 
+    {
+        Booking storage booking = bookings[_bookingId];
+        return (
+            booking.totalAmount,
+            booking.platformFee,
+            booking.hostAmount,
+            booking.fundsReleased,
+            booking.isConfirmed && 
+            !booking.fundsReleased && 
+            !booking.isCancelled && 
+            block.timestamp >= booking.checkInDate
+        );
+    }
+
+    function getTotalPlatformFees() external view returns (uint256) {
+        return totalPlatformFees;
     }
 }
