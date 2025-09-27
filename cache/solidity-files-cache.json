@@ -275,6 +275,43 @@
       "artifacts": [
         "WorldBNBStaking"
       ]
+    },
+    "C:\\Users\\chrsn\\Desktop\\WorldBNB\\contracts\\SimpleStaking.sol": {
+      "lastModificationDate": 1758985927391,
+      "contentHash": "17eb67b40389dbc3d7081a9f736fc3f9",
+      "sourceName": "contracts/SimpleStaking.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "SimpleStaking"
+      ]
     }
   }
 }

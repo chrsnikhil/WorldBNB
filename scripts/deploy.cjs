@@ -88,6 +88,15 @@ async function main() {
   const disputeAddress = await disputeContract.getAddress();
   console.log("DisputeResolution deployed to:", disputeAddress);
 
+  // Deploy SimpleStaking contract
+  console.log("Deploying SimpleStaking contract...");
+  const SimpleStaking = await ethers.getContractFactory("SimpleStaking");
+  const simpleStaking = await SimpleStaking.connect(deployer).deploy();
+  await simpleStaking.waitForDeployment();
+  
+  const simpleStakingAddress = await simpleStaking.getAddress();
+  console.log("SimpleStaking deployed to:", simpleStakingAddress);
+
   // Save deployment addresses
   const deploymentInfo = {
     network: "worldchain",
@@ -95,6 +104,7 @@ async function main() {
     propertyBooking: propertyBookingAddress,
     staking: stakingAddress,
     disputeResolution: disputeAddress,
+    simpleStaking: simpleStakingAddress,
     deployedAt: new Date().toISOString()
   };
 
@@ -103,6 +113,7 @@ async function main() {
   console.log("PropertyBooking:", propertyBookingAddress);
   console.log("WorldBNBStaking:", stakingAddress);
   console.log("DisputeResolution:", disputeAddress);
+  console.log("SimpleStaking:", simpleStakingAddress);
   console.log("\nSave these addresses for your frontend integration!");
 
   return deploymentInfo;

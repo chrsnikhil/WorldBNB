@@ -12,6 +12,7 @@ import SuccessModal from "../components/SuccessModal"
 import ModalPortal from "../components/ModalPortal"
 import HostClaimFunds from "../components/HostClaimFunds"
 import DisputeManager from "../components/DisputeManager"
+import SimpleStakingButton from "../components/SimpleStakingButton"
 
 interface User {
   walletAddress?: string;
@@ -481,11 +482,21 @@ function WorldBNBLanding() {
                   </motion.div>
                 </div>
 
-                {/* Available Properties */}
+                {/* Staking Section */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.9 }}
+                  className="mb-4"
+                >
+                  <SimpleStakingButton userAddress={user.walletAddress} />
+                </motion.div>
+
+                {/* Available Properties */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.0 }}
                   className="bg-neutral-800 rounded-xl p-4"
                 >
                   <h3 className="text-lg font-semibold mb-4 text-orange-500">Available Properties</h3>
