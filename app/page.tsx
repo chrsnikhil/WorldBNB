@@ -13,6 +13,12 @@ import ModalPortal from "../components/ModalPortal"
 import HostClaimFunds from "../components/HostClaimFunds"
 import DisputeManager from "../components/DisputeManager"
 import SimpleStakingButton from "../components/SimpleStakingButton"
+import FilecoinTest from "../components/FilecoinTest"
+import ReviewForm from "../components/ReviewForm"
+import TestReviewComponent from "../components/TestReviewComponent"
+import VerificationDebug from "../components/VerificationDebug"
+import { SynapseProvider } from "../providers/SynapseProvider"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 interface User {
   walletAddress?: string;
@@ -54,6 +60,9 @@ function WorldBNBLanding() {
   const [successMessage, setSuccessMessage] = useState("")
   const [successTitle, setSuccessTitle] = useState("")
   const [successPropertyId, setSuccessPropertyId] = useState<number | undefined>(undefined)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [selectedBooking, setSelectedBooking] = useState<any>(null)
+  const [reviews, setReviews] = useState<any[]>([])
 
   // Check MiniKit status on component mount
   useEffect(() => {
@@ -144,6 +153,15 @@ function WorldBNBLanding() {
     window.dispatchEvent(new CustomEvent('stateChange', {
       detail: { type: 'bookingCreated', value: bookingId }
     }));
+  }
+
+  const handleReviewSubmitted = (review: any) => {
+    setReviews(prev => [...prev, review])
+    setShowReviewForm(false)
+    setSelectedBooking(null)
+    setSuccessMessage("Review submitted successfully!")
+    setSuccessTitle("Review Submitted!")
+    setShowSuccessModal(true)
   }
 
 
@@ -482,15 +500,25 @@ function WorldBNBLanding() {
                   </motion.div>
                 </div>
 
-                {/* Staking Section */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.9 }}
-                  className="mb-4"
-                >
-                  <SimpleStakingButton userAddress={user.walletAddress} />
-                </motion.div>
+             {/* Staking Section */}
+             <motion.div
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.5, delay: 0.9 }}
+               className="mb-4"
+             >
+               <SimpleStakingButton userAddress={user.walletAddress} />
+             </motion.div>
+
+             {/* Filecoin Test Section */}
+             <motion.div
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.5, delay: 1.0 }}
+               className="mb-4"
+             >
+               <FilecoinTest />
+             </motion.div>
 
                 {/* Available Properties */}
                 <motion.div
@@ -906,104 +934,122 @@ function WorldBNBLanding() {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="space-y-4"
               >
-                {/* Reviews Section */}
+                {/* Reviews Header */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
                   className="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl p-6 text-white"
                 >
-                  <h2 className="text-2xl font-bold mb-2">Your Reviews</h2>
-                  <p className="text-yellow-100 mb-4">See what guests say about your stays</p>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex text-yellow-200">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm">4.8 average rating</span>
-                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Leave Reviews</h2>
+                  <p className="text-yellow-100 mb-4">Review your completed bookings</p>
                 </motion.div>
 
-                {/* Recent Reviews */}
+                {/* Verification Debug Component */}
+                <VerificationDebug />
+
+                {/* Test Review Component */}
+                <TestReviewComponent onReviewSubmitted={handleReviewSubmitted} />
+
+                {/* Submitted Reviews */}
+                {reviews.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                    className="bg-neutral-800 rounded-xl p-4"
+                  >
+                    <h3 className="text-lg font-semibold mb-4 text-green-500">Your Submitted Reviews</h3>
+                    <div className="space-y-4">
+                      {reviews.map((review) => (
+                        <div key={review.id} className="bg-neutral-700 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm font-medium text-white">
+                                {review.isTestReview ? "Test Review" : `Booking #${review.bookingId}`}
+                              </span>
+                              {review.isTestReview && (
+                                <span className="px-2 py-1 bg-purple-500 text-white text-xs rounded-full">
+                                  TEST
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex text-yellow-400 text-sm">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <svg
+                                  key={star}
+                                  className={`w-3 h-3 ${star <= review.rating ? 'text-yellow-400' : 'text-gray-500'}`}
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              ))}
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <p className="text-neutral-300 text-sm">"{review.comment}"</p>
+                          )}
+                          <p className="text-xs text-neutral-400 mt-2">
+                            {new Date(review.timestamp).toLocaleString()} • Verified: {review.verified ? "Yes" : "No"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Bookings Available for Review */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
                   className="bg-neutral-800 rounded-xl p-4"
                 >
-                  <h3 className="text-lg font-semibold mb-4 text-yellow-500">Recent Reviews</h3>
-                  <div className="space-y-4">
-                    <div className="bg-neutral-700 rounded-lg p-4">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">A</span>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-white">Alex M.</h4>
-                          <div className="flex text-yellow-400 text-sm">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-neutral-300 text-sm">"Amazing stay! The host was very responsive and the place was exactly as described."</p>
+                  <h3 className="text-lg font-semibold mb-4 text-yellow-500">Your Bookings to Review</h3>
+                  {bookings.filter(booking => booking.status === 'completed').length === 0 ? (
+                    <div className="text-center py-8">
+                      <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <p className="text-gray-400">No completed bookings to review yet</p>
+                      <p className="text-sm text-gray-500 mt-2">Complete a booking to leave a review</p>
                     </div>
-                    
-                    <div className="bg-neutral-700 rounded-lg p-4">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">S</span>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-white">Sarah K.</h4>
-                          <div className="flex text-yellow-400 text-sm">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
+                  ) : (
+                    <div className="space-y-4">
+                      {bookings
+                        .filter(booking => booking.status === 'completed')
+                        .map((booking) => (
+                          <div key={booking.id} className="bg-neutral-700 rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-white mb-1">Booking #{booking.id}</h4>
+                                <p className="text-sm text-gray-300 mb-2">{booking.propertyName}</p>
+                                <p className="text-xs text-gray-400">
+                                  {booking.checkIn} - {booking.checkOut}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setSelectedBooking(booking);
+                                  setShowReviewForm(true);
+                                  // Dispatch events to GlobalModals
+                                  window.dispatchEvent(new CustomEvent('stateChange', {
+                                    detail: { type: 'selectedBooking', value: booking }
+                                  }));
+                                  window.dispatchEvent(new CustomEvent('stateChange', {
+                                    detail: { type: 'showReviewForm', value: true }
+                                  }));
+                                }}
+                                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm"
+                              >
+                                Leave Review
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      <p className="text-neutral-300 text-sm">"Perfect location and great amenities. Would definitely stay again!"</p>
+                        ))}
                     </div>
-                  </div>
+                  )}
                 </motion.div>
               </motion.div>
             )}
@@ -1366,9 +1412,11 @@ function WorldBNBLanding() {
       {/* Mobile App Header */}
       <div className="bg-neutral-900 border-b border-neutral-700 px-4 py-3 safe-area-top">
         <div className="flex items-center justify-center">
-          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-sm">W</span>
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="WorldBNB Logo" 
+            className="w-8 h-8 rounded-full object-cover border-2 border-orange-500"
+          />
         </div>
       </div>
 
@@ -1386,9 +1434,13 @@ function WorldBNBLanding() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.6, delay: 0.3, type: "spring", stiffness: 200 }}
-              className="w-20 h-20 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg"
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto shadow-lg overflow-hidden border-2 border-orange-500"
             >
-              <span className="text-white font-bold text-2xl">W</span>
+              <img 
+                src="/logo.png" 
+                alt="WorldBNB Logo" 
+                className="w-full h-full object-cover rounded-2xl"
+              />
             </motion.div>
             <motion.div
               initial={{ opacity: 0 }}
@@ -1450,10 +1502,7 @@ function WorldBNBLanding() {
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
-              <span>Works best in World App</span>
-            </div>
-            <div className="text-neutral-600 text-xs">
-              If button doesn't work, open this app in World App
+              <span>Made for the World Ecosystem</span>
             </div>
           </div>
 
@@ -1465,12 +1514,24 @@ function WorldBNBLanding() {
 }
 
 // Global modals that render outside the main component
+// Create a QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+})
+
 export default function App() {
   return (
-    <>
-      <WorldBNBLanding />
-      <GlobalModals />
-    </>
+    <QueryClientProvider client={queryClient}>
+      <SynapseProvider>
+        <WorldBNBLanding />
+        <GlobalModals />
+      </SynapseProvider>
+    </QueryClientProvider>
   )
 }
 
@@ -1485,6 +1546,8 @@ function GlobalModals() {
   const [successTitle, setSuccessTitle] = useState("")
   const [successPropertyId, setSuccessPropertyId] = useState<number | undefined>(undefined)
   const [userWalletAddress, setUserWalletAddress] = useState<string | null>(null)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [selectedBooking, setSelectedBooking] = useState<any>(null)
 
   const handleBookingCreated = (bookingId: number) => {
     console.log('🎉 GlobalModals handleBookingCreated called with bookingId:', bookingId)
@@ -1520,6 +1583,14 @@ function GlobalModals() {
     }));
   }
 
+  const handleReviewSubmitted = (review: any) => {
+    setShowReviewForm(false)
+    setSelectedBooking(null)
+    setSuccessMessage("Review submitted successfully!")
+    setSuccessTitle("Review Submitted!")
+    setShowSuccessModal(true)
+  }
+
   // Listen for state changes from the main component
   useEffect(() => {
     const handleStateChange = (event: CustomEvent) => {
@@ -1549,6 +1620,12 @@ function GlobalModals() {
       }
       if (event.detail.type === 'successPropertyId') {
         setSuccessPropertyId(event.detail.value)
+      }
+      if (event.detail.type === 'showReviewForm') {
+        setShowReviewForm(event.detail.value)
+      }
+      if (event.detail.type === 'selectedBooking') {
+        setSelectedBooking(event.detail.value)
       }
       if (event.detail.type === 'userWalletAddress') {
         setUserWalletAddress(event.detail.value)
@@ -1640,6 +1717,20 @@ function GlobalModals() {
         message={successMessage}
         propertyId={successPropertyId}
       />
+
+      {/* Review Form Modal */}
+      {showReviewForm && selectedBooking && (
+        <ModalPortal>
+          <ReviewForm
+            booking={selectedBooking}
+            onReviewSubmitted={handleReviewSubmitted}
+            onClose={() => {
+              setShowReviewForm(false)
+              setSelectedBooking(null)
+            }}
+          />
+        </ModalPortal>
+      )}
     </>
   )
 }

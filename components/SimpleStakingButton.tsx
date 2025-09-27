@@ -11,13 +11,13 @@ interface SimpleStakingButtonProps {
 export default function SimpleStakingButton({ userAddress }: SimpleStakingButtonProps) {
   const [isStaked, setIsStaked] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isChecking, setIsChecking] = useState(true)
+  const [isChecking, setIsChecking] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Check staking status on mount
-  useEffect(() => {
-    checkStakeStatus()
-  }, [userAddress])
+  // Remove automatic stake status check to prevent unwanted sendTransaction popup
+  // useEffect(() => {
+  //   checkStakeStatus()
+  // }, [userAddress])
 
   const checkStakeStatus = async () => {
     if (!userAddress) {
@@ -182,25 +182,15 @@ export default function SimpleStakingButton({ userAddress }: SimpleStakingButton
           )}
         </button>
 
-          <div className="flex space-x-2">
-            <button
-              onClick={() => {
-                console.log('Force setting staked status to true')
-                setIsStaked(true)
-                setError(null)
-              }}
-              disabled={isLoading}
-              className="flex-1 py-2 px-4 text-sm bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg transition-all disabled:opacity-50"
-            >
-              Force Staked
-            </button>
-          </div>
         </div>
 
-        <div className="mt-4 text-xs text-purple-200">
-          <p>• Required stake: 0.1 WLD</p>
-          <p>• Staking enables all app features</p>
-          <p>• One-time stake to use the app</p>
+        <div className="mt-4 text-xs text-purple-200 space-y-1">
+          <p className="font-medium text-purple-100">Why do I need to stake?</p>
+          <p>• <strong>Security:</strong> Prevents spam and ensures serious users</p>
+          <p>• <strong>Dispute Resolution:</strong> Enables fair dispute handling</p>
+          <p>• <strong>Platform Access:</strong> Required to list and book properties</p>
+          <p>• <strong>One-time Fee:</strong> Only 0.1 WLD stake, not recurring</p>
+          <p>• <strong>Refundable:</strong> You can unstake when you're done</p>
         </div>
       </div>
     </div>

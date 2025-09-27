@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MiniKit } from '@worldcoin/minikit-js'
 import PropertyHostingABI from '../abi/PropertyHosting.json'
+import SimpleFileUpload from './SimpleFileUpload'
 
 interface PropertyFormData {
   name: string
@@ -20,8 +21,17 @@ interface PropertyListingFormProps {
 }
 
 export default function PropertyListingForm({ onPropertyListed, onClose, hostAddress }: PropertyListingFormProps) {
+  
+  // Simple close handler
+  const handleClose = () => {
+    onClose();
+  };
   console.log('🏠 PropertyListingForm component rendered!');
   console.log('🏠 hostAddress prop:', hostAddress);
+  
+  // Fallback to World App wallet address if hostAddress is not provided
+  const userAddress = hostAddress || (typeof window !== 'undefined' && (window as any).MiniKit?.walletAddress) || "0x0000000000000000000000000000000000000000";
+  console.log('🏠 Final userAddress for Filecoin:', userAddress);
   const [formData, setFormData] = useState<PropertyFormData>({
     name: '',
     description: '',
@@ -31,6 +41,7 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showFileUpload, setShowFileUpload] = useState(false)
 
   // Get wallet address from MiniKit or use provided hostAddress
   const getWalletAddress = () => {
@@ -105,7 +116,7 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
               formData.description,
               formData.location,
               priceInWei, // _pricePerNight in wei
-              formData.imageHash || 'QmDefaultImageHash'
+              'QmDefaultImageHash' // Always use default hash, ignore uploaded image
             ],
           },
         ],
@@ -148,13 +159,27 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
     }))
   }
 
+  const handleImageUploaded = (imageUrl: string) => {
+    console.log("🖼️ Image uploaded to form! URL length:", imageUrl.length);
+    setFormData(prev => ({
+      ...prev,
+      imageHash: imageUrl
+    }))
+    setShowFileUpload(false)
+  }
+
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-red-500/80 flex items-center justify-center p-4 z-[99999]"
-      onClick={onClose}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[99999]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleClose();
+        }
+      }}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
@@ -166,8 +191,8 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">List Your Property</h2>
           <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -240,16 +265,53 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Image Hash (IPFS)
+              Property Image
             </label>
-            <input
-              type="text"
-              name="imageHash"
-              value={formData.imageHash}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-              placeholder="QmYourImageHash (optional)"
-            />
+            <div className="space-y-2">
+              {formData.imageHash ? (
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 p-2 bg-green-50 rounded-lg">
+                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-sm text-green-700">Image stored on Filecoin (mock)</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, imageHash: '' }))}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Show uploaded image preview */}
+                  <div>
+                    <img 
+                      src={formData.imageHash} 
+                      alt="Uploaded property" 
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowFileUpload(true)}
+                  className="w-full p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 transition-colors text-left"
+                >
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm sm:text-base text-gray-700 font-medium">Upload to Filecoin</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Decentralized, permanent storage</p>
+                    </div>
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
 
 
@@ -277,6 +339,14 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
           </div>
         </form>
       </motion.div>
+
+      {/* Simple File Upload Modal */}
+      {showFileUpload && (
+        <SimpleFileUpload
+          onImageUploaded={handleImageUploaded}
+          onClose={() => setShowFileUpload(false)}
+        />
+      )}
     </motion.div>
   )
 }
