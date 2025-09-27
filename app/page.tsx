@@ -2,9 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { MiniKit } from "@worldcoin/minikit-js"
+import { MiniKit, VerifyCommandInput, VerificationLevel } from "@worldcoin/minikit-js"
 import SendMoneyComponent from "../components/SendMoneyComponent"
 import ReceiveMoneyComponent from "../components/ReceiveMoneyComponent"
+import PropertyListingForm from "../components/PropertyListingForm"
+import PropertyBookingForm from "../components/PropertyBookingForm"
+import PropertyDetailsModal from "../components/PropertyDetailsModal"
+import SuccessModal from "../components/SuccessModal"
+import ModalPortal from "../components/ModalPortal"
 
 interface User {
   walletAddress?: string;
@@ -17,18 +22,117 @@ interface User {
   deviceOS?: string;
 }
 
-export default function WorldBNBLanding() {
+interface Property {
+  id: number;
+  host: string;
+  name: string;
+  description: string;
+  location: string;
+  pricePerNight: number;
+  isActive: boolean;
+  createdAt: number;
+  imageHash: string;
+}
+
+function WorldBNBLanding() {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('home') // 'home', 'send', 'receive'
+  const [activeTab, setActiveTab] = useState('home') // 'home', 'send', 'receive', 'host', 'properties'
+  const [properties, setProperties] = useState<Property[]>([])
+  const [showPropertyForm, setShowPropertyForm] = useState(false)
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [showBookingForm, setShowBookingForm] = useState(false)
+  const [showPropertyDetails, setShowPropertyDetails] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
+  const [successTitle, setSuccessTitle] = useState("")
+  const [successPropertyId, setSuccessPropertyId] = useState<number | undefined>(undefined)
 
   // Check MiniKit status on component mount
   useEffect(() => {
     console.log('MiniKit installed:', MiniKit.isInstalled())
     console.log('Authentication state:', { isAuthenticated, user: !!user, isLoading })
   }, [isAuthenticated, user, isLoading])
+
+  // Fetch properties when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProperties()
+    }
+  }, [isAuthenticated])
+
+  // Debug showPropertyForm changes
+  useEffect(() => {
+    console.log('🔄 showPropertyForm changed to:', showPropertyForm);
+  }, [showPropertyForm])
+
+
+  const fetchProperties = async () => {
+    try {
+      const response = await fetch('/api/get-properties')
+      const data = await response.json()
+      if (data.success) {
+        setProperties(data.properties)
+      }
+    } catch (error) {
+      console.error('Error fetching properties:', error)
+    }
+  }
+
+  const handlePropertyListed = (propertyId: number) => {
+    console.log('Property listed with ID:', propertyId)
+    setShowPropertyForm(false) // Close the modal
+    fetchProperties() // Refresh the properties list
+    
+    // Show success modal
+    setSuccessTitle("Property Listed Successfully!")
+    setSuccessMessage("Your property has been listed on the blockchain and is now available for booking.")
+    setSuccessPropertyId(propertyId)
+    setShowSuccessModal(true)
+    
+    // Dispatch events to GlobalModals
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'successTitle', value: "Property Listed Successfully!" }
+    }));
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'successMessage', value: "Your property has been listed on the blockchain and is now available for booking." }
+    }));
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'successPropertyId', value: propertyId }
+    }));
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'showSuccessModal', value: true }
+    }));
+  }
+
+  const handleBookingCreated = (bookingId: number) => {
+    console.log('Booking created with ID:', bookingId)
+    // You could add booking management here
+  }
+
+  const openBookingForm = (property: Property) => {
+    setSelectedProperty(property)
+    setShowBookingForm(true)
+  }
+
+  const openPropertyDetails = (property: Property) => {
+    setSelectedProperty(property)
+    setShowPropertyDetails(true)
+    // Dispatch event to GlobalModals
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'selectedProperty', value: property }
+    }));
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'showPropertyDetails', value: true }
+    }));
+  }
+
+  const closePropertyDetails = () => {
+    setShowPropertyDetails(false)
+    setSelectedProperty(null)
+  }
 
   const signIn = async () => {
     try {
@@ -92,6 +196,10 @@ export default function WorldBNBLanding() {
             console.log('User info:', userInfo)
             setUser(userInfo)
             setIsAuthenticated(true)
+            // Dispatch event to global modal
+            window.dispatchEvent(new CustomEvent('stateChange', {
+              detail: { type: 'isAuthenticated', value: true }
+            }));
           } catch (error) {
             console.error('Failed to get user info:', error)
             // Still set as authenticated if we have wallet address
@@ -100,12 +208,17 @@ export default function WorldBNBLanding() {
               username: 'User',
             })
             setIsAuthenticated(true)
+            // Dispatch event to global modal
+            window.dispatchEvent(new CustomEvent('stateChange', {
+              detail: { type: 'isAuthenticated', value: true }
+            }));
           }
         } else {
           setError('No wallet address available in authentication payload')
         }
       } else {
-        setError('Authentication verification failed')
+        console.error('Authentication verification failed:', result.message)
+        setError(`Authentication verification failed: ${result.message || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Authentication error:', error)
@@ -118,7 +231,15 @@ export default function WorldBNBLanding() {
   const signOut = () => {
     setUser(null)
     setIsAuthenticated(false)
+    // Dispatch event to global modal
+    window.dispatchEvent(new CustomEvent('stateChange', {
+      detail: { type: 'isAuthenticated', value: false }
+    }));
     setActiveTab('home')
+    // Reset modal states when logging out
+    setShowPropertyForm(false)
+    setShowBookingForm(false)
+    setSelectedProperty(null)
   }
 
   // Show loading state
@@ -202,27 +323,27 @@ export default function WorldBNBLanding() {
                     : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                Home
+                Explore
               </button>
               <button
-                onClick={() => setActiveTab('send')}
+                onClick={() => setActiveTab('host')}
                 className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'send' 
+                  activeTab === 'host' 
                     ? 'bg-orange-500 text-white' 
                     : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                Send Money
+                Host
               </button>
               <button
-                onClick={() => setActiveTab('receive')}
+                onClick={() => setActiveTab('properties')}
                 className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'receive' 
+                  activeTab === 'properties' 
                     ? 'bg-orange-500 text-white' 
                     : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                Receive Money
+                Properties
               </button>
             </motion.div>
 
@@ -234,53 +355,400 @@ export default function WorldBNBLanding() {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="space-y-4"
               >
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-4">
-                  <motion.button
-                    initial={{ scale: 0.9 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.3, delay: 0.5 }}
-                    onClick={() => setActiveTab('send')}
-                    className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white text-center hover:from-green-600 hover:to-green-700 transition-all duration-200"
-                  >
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                    </div>
-                    <h3 className="font-semibold">Send Money</h3>
-                    <p className="text-sm text-green-100">Pay someone</p>
-                  </motion.button>
-                  
-                  <motion.button
-                    initial={{ scale: 0.9 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.3, delay: 0.6 }}
-                    onClick={() => setActiveTab('receive')}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white text-center hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
-                  >
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m7-7H5" />
-                      </svg>
-                    </div>
-                    <h3 className="font-semibold">Receive Money</h3>
-                    <p className="text-sm text-blue-100">Get paid</p>
-                  </motion.button>
-                </div>
-
-                {/* Recent Transactions */}
+                {/* Hero Section */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.7 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white"
+                >
+                  <h2 className="text-2xl font-bold mb-2">Welcome to WorldBNB</h2>
+                  <p className="text-orange-100 mb-4">Discover unique places to stay around the world</p>
+                  <div className="flex space-x-3">
+                    <button className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <span>Search</span>
+                    </button>
+                    <button className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>Near me</span>
+                    </button>
+                  </div>
+                </motion.div>
+
+                {/* Quick Actions Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                    className="bg-neutral-800 rounded-xl p-4 hover:bg-neutral-700 transition-all cursor-pointer"
+                    onClick={() => setActiveTab('properties')}
+                  >
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-white mb-1">View Properties</h3>
+                    <p className="text-sm text-neutral-400">Browse available stays</p>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
+                    className="bg-neutral-800 rounded-xl p-4 hover:bg-neutral-700 transition-all cursor-pointer"
+                    onClick={() => setActiveTab('host')}
+                  >
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-white mb-1">Host Property</h3>
+                    <p className="text-sm text-neutral-400">List your space</p>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.7 }}
+                    className="bg-neutral-800 rounded-xl p-4 hover:bg-neutral-700 transition-all cursor-pointer"
+                  >
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-white mb-1">Reviews</h3>
+                    <p className="text-sm text-neutral-400">Rate your stays</p>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.8 }}
+                    className="bg-neutral-800 rounded-xl p-4 hover:bg-neutral-700 transition-all cursor-pointer"
+                  >
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-white mb-1">Profile</h3>
+                    <p className="text-sm text-neutral-400">Manage account</p>
+                  </motion.div>
+                </div>
+
+                {/* Available Properties */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.9 }}
                   className="bg-neutral-800 rounded-xl p-4"
                 >
-                  <h3 className="text-lg font-semibold mb-4 text-orange-500">Recent Transactions</h3>
-                  <div className="text-center py-8">
-                    <p className="text-neutral-400">No transactions yet</p>
-                    <p className="text-sm text-neutral-500 mt-1">Start by sending or receiving money</p>
+                  <h3 className="text-lg font-semibold mb-4 text-orange-500">Available Properties</h3>
+                  {properties.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <p className="text-neutral-400 mb-4">No properties available yet</p>
+                      <p className="text-sm text-neutral-500">Be the first to list a property!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {properties.map((property) => (
+                        <div 
+                          key={property.id} 
+                          className="bg-neutral-700 rounded-lg p-3 flex items-center space-x-3 hover:bg-neutral-600 transition-colors cursor-pointer"
+                          onClick={() => openBookingForm(property)}
+                        >
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-white">{property.name}</h4>
+                            <p className="text-sm text-neutral-400">{property.location}</p>
+                            <p className="text-xs text-orange-500">{property.pricePerNight} WLD/night</p>
+                          </div>
+                          <div className="text-orange-500">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              </motion.div>
+            )}
+
+            {activeTab === 'host' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="space-y-4"
+              >
+                {/* Host Property Section */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white"
+                >
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2">Become a Host</h2>
+                    <p className="text-green-100 mb-6">Share your space and earn money by listing your property</p>
+                    
+                    <button 
+                      onClick={async () => {
+                        try {
+                          // First verify with World ID
+                          const verifyPayload: VerifyCommandInput = {
+                            action: 'verifyuser', // Match your actual incognito action
+                            signal: '0x1234567890abcdef', // Use hex string like in docs
+                            verification_level: VerificationLevel.Orb
+                          };
+                          
+                          const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload);
+                          
+                          if (finalPayload.status === 'error') {
+                            console.error('❌ Verification failed:', finalPayload);
+                            alert(`Verification failed: ${finalPayload.error || 'Unknown error'}`);
+                            return;
+                          }
+                          
+                          // Verify with backend
+                          const verifyResponse = await fetch('/api/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              payload: finalPayload,
+                              action: 'verifyuser', // Match your actual incognito action
+                              signal: '0x1234567890abcdef',
+                            }),
+                          });
+                          
+                          const verifyResponseJson = await verifyResponse.json();
+                          
+                          if (verifyResponseJson.status === 200) {
+                            setShowPropertyForm(true);
+                            // Dispatch event to global modal
+                            window.dispatchEvent(new CustomEvent('stateChange', {
+                              detail: { type: 'showPropertyForm', value: true }
+                            }));
+                          } else {
+                            console.error('❌ Backend verification failed:', verifyResponseJson);
+                            alert(`Backend verification failed: ${verifyResponseJson.message || 'Unknown error'}`);
+                          }
+                        } catch (error: any) {
+                          console.error('❌ Verification error:', error);
+                          alert(`Verification failed: ${error.message || 'Unknown error'}`);
+                        }
+                      }}
+                      className="w-full bg-white text-green-600 font-semibold py-4 px-6 rounded-xl hover:bg-green-50 active:bg-green-100 transition-all duration-200 flex items-center justify-center space-x-3 touch-manipulation"
+                      style={{
+                        WebkitTapHighlightColor: 'transparent',
+                        WebkitTouchCallout: 'none',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none',
+                        touchAction: 'manipulation'
+                      }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <span>List Your Property</span>
+                    </button>
                   </div>
+                </motion.div>
+
+
+                {/* Your Properties */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="bg-neutral-800 rounded-xl p-4"
+                >
+                  <h3 className="text-lg font-semibold mb-4 text-green-500">Your Properties</h3>
+                  {properties.length === 0 ? (
+                    <p className="text-neutral-400">No properties listed yet. List your first property!</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {properties.map((property) => (
+                        <div key={property.id} className="bg-neutral-700 rounded-lg p-3">
+                          <h4 className="font-medium text-white">{property.name}</h4>
+                          <p className="text-sm text-neutral-400">{property.location}</p>
+                          <p className="text-sm text-green-400">{property.pricePerNight} WLD per night</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              </motion.div>
+            )}
+
+            {activeTab === 'properties' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="space-y-4"
+              >
+                {/* Properties Header */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white"
+                >
+                  <h2 className="text-2xl font-bold mb-2">Available Properties</h2>
+                  <p className="text-blue-100 mb-4">Discover amazing places to stay</p>
+                  <div className="flex space-x-2">
+                    <button className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <span>Search</span>
+                    </button>
+                    <button className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
+                      </svg>
+                      <span>Filter</span>
+                    </button>
+                  </div>
+                </motion.div>
+
+                {/* Properties List */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="bg-neutral-800 rounded-xl p-4"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">
+                      All Properties ({properties.length})
+                    </h3>
+                    <button 
+                      onClick={() => fetchProperties()}
+                      className="text-orange-500 hover:text-orange-400 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {properties.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <h4 className="text-lg font-medium text-white mb-2">No Properties Available</h4>
+                      <p className="text-neutral-400 mb-4">Be the first to list a property!</p>
+                      <button 
+                        onClick={() => setActiveTab('host')}
+                        className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                      >
+                        List Your Property
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {properties.map((property, index) => (
+                        <motion.div
+                          key={property.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.1 }}
+                          className="bg-gradient-to-r from-neutral-800 to-neutral-700 rounded-xl overflow-hidden hover:from-neutral-700 hover:to-neutral-600 transition-all duration-300 cursor-pointer transform hover:scale-102 hover:shadow-lg hover:shadow-orange-500/10"
+                          onClick={() => openPropertyDetails(property)}
+                        >
+                          {/* Property Image Placeholder - Smaller */}
+                          <div className="h-32 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-black/20"></div>
+                            <div className="absolute top-2 right-2">
+                              <div className="bg-white/20 backdrop-blur-sm rounded-full px-2 py-1">
+                                <span className="text-white text-xs font-medium">#{property.id}</span>
+                              </div>
+                            </div>
+                            <div className="absolute bottom-2 left-2">
+                              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1">
+                                <div className="text-white font-bold text-sm">{property.pricePerNight} WLD</div>
+                                <div className="text-white/80 text-xs">per night</div>
+                              </div>
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Property Details - Smaller */}
+                          <div className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-white text-lg mb-1 truncate">{property.name}</h4>
+                                <div className="flex items-center text-neutral-400 text-xs mb-2">
+                                  <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  </svg>
+                                  <span className="truncate">{property.location}</span>
+                                </div>
+                              </div>
+                              <div className="text-orange-500 ml-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </div>
+                            
+                            <p className="text-neutral-300 text-xs mb-3 line-clamp-2 leading-relaxed">
+                              {property.description}
+                            </p>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                <span className="text-green-400 text-xs font-medium">Available</span>
+                              </div>
+                              <div className="text-neutral-500 text-xs">
+                                {new Date(property.createdAt * 1000).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               </motion.div>
             )}
@@ -290,8 +758,68 @@ export default function WorldBNBLanding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
+                className="space-y-4"
               >
-                <SendMoneyComponent />
+                {/* Host Property Section */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white"
+                >
+                  <h2 className="text-2xl font-bold mb-2">Become a Host</h2>
+                  <p className="text-green-100 mb-4">Share your space and earn money</p>
+                  <button 
+                    onClick={() => {
+                      setShowPropertyForm(true);
+                    }}
+                    className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 text-sm font-medium hover:bg-white/30 active:bg-white/40 transition-all flex items-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>List Your Property</span>
+                  </button>
+                </motion.div>
+
+                {/* Hosting Tips */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="bg-neutral-800 rounded-xl p-4"
+                >
+                  <h3 className="text-lg font-semibold mb-4 text-green-500">Hosting Tips</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-green-500 text-sm">1</span>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-white">Set competitive prices</h4>
+                        <p className="text-sm text-neutral-400">Research local market rates</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-green-500 text-sm">2</span>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-white">Take great photos</h4>
+                        <p className="text-sm text-neutral-400">Good photos attract more guests</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-green-500 text-sm">3</span>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-white">Respond quickly</h4>
+                        <p className="text-sm text-neutral-400">Fast responses improve bookings</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               </motion.div>
             )}
 
@@ -300,8 +828,107 @@ export default function WorldBNBLanding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
+                className="space-y-4"
               >
-                <ReceiveMoneyComponent user={user} />
+                {/* Reviews Section */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl p-6 text-white"
+                >
+                  <h2 className="text-2xl font-bold mb-2">Your Reviews</h2>
+                  <p className="text-yellow-100 mb-4">See what guests say about your stays</p>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex text-yellow-200">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm">4.8 average rating</span>
+                  </div>
+                </motion.div>
+
+                {/* Recent Reviews */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="bg-neutral-800 rounded-xl p-4"
+                >
+                  <h3 className="text-lg font-semibold mb-4 text-yellow-500">Recent Reviews</h3>
+                  <div className="space-y-4">
+                    <div className="bg-neutral-700 rounded-lg p-4">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">A</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-white">Alex M.</h4>
+                          <div className="flex text-yellow-400 text-sm">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-neutral-300 text-sm">"Amazing stay! The host was very responsive and the place was exactly as described."</p>
+                    </div>
+                    
+                    <div className="bg-neutral-700 rounded-lg p-4">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">S</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-white">Sarah K.</h4>
+                          <div className="flex text-yellow-400 text-sm">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-neutral-300 text-sm">"Perfect location and great amenities. Would definitely stay again!"</p>
+                    </div>
+                  </div>
+                </motion.div>
               </motion.div>
             )}
 
@@ -415,34 +1042,35 @@ export default function WorldBNBLanding() {
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                 </svg>
-                <span className="text-xs">Home</span>
+                <span className="text-xs">Explore</span>
               </button>
               <button 
                 onClick={() => setActiveTab('send')}
                 className={`mobile-nav-item ${activeTab === 'send' ? 'active' : ''}`}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
                 </svg>
-                <span className="text-xs">Send</span>
+                <span className="text-xs">Host</span>
               </button>
               <button 
                 onClick={() => setActiveTab('receive')}
                 className={`mobile-nav-item ${activeTab === 'receive' ? 'active' : ''}`}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m7-7H5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
-                <span className="text-xs">Receive</span>
+                <span className="text-xs">Reviews</span>
               </button>
               <button 
                 onClick={signOut}
                 className="mobile-nav-item"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span className="text-xs">Logout</span>
+                <span className="text-xs">Profile</span>
               </button>
             </div>
           </div>
@@ -551,19 +1179,145 @@ export default function WorldBNBLanding() {
             </div>
           </div>
 
-          {/* Debug Info (only in development) */}
-          {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
-            <details className="bg-neutral-900 rounded-xl p-4">
-              <summary className="cursor-pointer text-orange-500 font-mono text-sm">Debug Info</summary>
-              <div className="mt-4 text-xs text-neutral-400 space-y-1">
-                <div>Loading: {isLoading.toString()}</div>
-                <div>Authenticated: {isAuthenticated.toString()}</div>
-                <div>MiniKit: {typeof window !== 'undefined' && (window as any).MiniKit ? 'Available' : 'Not Available'}</div>
-              </div>
-            </details>
-          )}
         </div>
       </div>
+
     </motion.div>
+  )
+}
+
+// Global modals that render outside the main component
+export default function App() {
+  return (
+    <>
+      <WorldBNBLanding />
+      <GlobalModals />
+    </>
+  )
+}
+
+function GlobalModals() {
+  const [showPropertyForm, setShowPropertyForm] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showBookingForm, setShowBookingForm] = useState(false)
+  const [showPropertyDetails, setShowPropertyDetails] = useState(false)
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
+  const [successTitle, setSuccessTitle] = useState("")
+  const [successPropertyId, setSuccessPropertyId] = useState<number | undefined>(undefined)
+
+  // Listen for state changes from the main component
+  useEffect(() => {
+    const handleStateChange = (event: CustomEvent) => {
+      if (event.detail.type === 'showPropertyForm') {
+        setShowPropertyForm(event.detail.value)
+      }
+      if (event.detail.type === 'isAuthenticated') {
+        setIsAuthenticated(event.detail.value)
+      }
+      if (event.detail.type === 'showBookingForm') {
+        setShowBookingForm(event.detail.value)
+      }
+      if (event.detail.type === 'showPropertyDetails') {
+        setShowPropertyDetails(event.detail.value)
+      }
+      if (event.detail.type === 'selectedProperty') {
+        setSelectedProperty(event.detail.value)
+      }
+      if (event.detail.type === 'showSuccessModal') {
+        setShowSuccessModal(event.detail.value)
+      }
+      if (event.detail.type === 'successMessage') {
+        setSuccessMessage(event.detail.value)
+      }
+      if (event.detail.type === 'successTitle') {
+        setSuccessTitle(event.detail.value)
+      }
+      if (event.detail.type === 'successPropertyId') {
+        setSuccessPropertyId(event.detail.value)
+      }
+    }
+
+    window.addEventListener('stateChange', handleStateChange as EventListener)
+    return () => window.removeEventListener('stateChange', handleStateChange as EventListener)
+  }, [])
+
+  return (
+    <>
+      {/* Property Listing Modal */}
+      {showPropertyForm && (
+        <ModalPortal>
+          <PropertyListingForm
+            onPropertyListed={(propertyId: number) => {
+              setShowPropertyForm(false);
+              // Dispatch event to close modal
+              window.dispatchEvent(new CustomEvent('stateChange', {
+                detail: { type: 'showPropertyForm', value: false }
+              }));
+              
+              // Dispatch success modal events
+              window.dispatchEvent(new CustomEvent('stateChange', {
+                detail: { type: 'successTitle', value: "Property Listed Successfully!" }
+              }));
+              window.dispatchEvent(new CustomEvent('stateChange', {
+                detail: { type: 'successMessage', value: "Your property has been listed on the blockchain and is now available for booking." }
+              }));
+              window.dispatchEvent(new CustomEvent('stateChange', {
+                detail: { type: 'successPropertyId', value: propertyId }
+              }));
+              window.dispatchEvent(new CustomEvent('stateChange', {
+                detail: { type: 'showSuccessModal', value: true }
+              }));
+            }}
+            onClose={() => {
+              setShowPropertyForm(false);
+              // Dispatch event to close modal
+              window.dispatchEvent(new CustomEvent('stateChange', {
+                detail: { type: 'showPropertyForm', value: false }
+              }));
+            }}
+          />
+        </ModalPortal>
+      )}
+
+      {/* Property Booking Modal */}
+      {showBookingForm && selectedProperty && (
+        <ModalPortal>
+          <PropertyBookingForm
+            property={selectedProperty}
+            onBookingCreated={() => {}}
+            onClose={() => {
+              setShowBookingForm(false)
+              setSelectedProperty(null)
+            }}
+          />
+        </ModalPortal>
+      )}
+
+      {/* Property Details Modal */}
+      <PropertyDetailsModal
+        property={selectedProperty}
+        isOpen={showPropertyDetails}
+        onClose={() => {
+          setShowPropertyDetails(false)
+          setSelectedProperty(null)
+        }}
+        onBook={(property) => {
+          setShowPropertyDetails(false)
+          setSelectedProperty(property)
+          setShowBookingForm(true)
+        }}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title={successTitle}
+        message={successMessage}
+        propertyId={successPropertyId}
+      />
+    </>
   )
 }
