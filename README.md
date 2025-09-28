@@ -1,285 +1,291 @@
-# 🎯 TACTICAL OPS DASHBOARD
-## Cyberpunk Command Interface
+# WorldBNB
 
-A futuristic, military-grade dashboard interface built with Next.js, featuring a comprehensive cyberpunk design system with 3D elements, tactical styling, and advanced animations.
+> The world's first decentralized property rental platform built on World Chain
 
----
+[![World Chain](https://img.shields.io/badge/Built%20on-World%20Chain-orange)](https://worldchain.org)
+[![World ID](https://img.shields.io/badge/Verified-World%20ID-blue)](https://worldcoin.org)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org)
 
-## 🚀 QUICK START
+## 🌟 Overview
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn package manager
+WorldBNB is a revolutionary property rental platform that combines the power of World Chain's native wallet, World ID verification, and decentralized storage to create a secure, transparent, and trustless rental experience. Built entirely on World Chain infrastructure, WorldBNB eliminates intermediaries and creates a truly decentralized marketplace for property rentals.
 
-### Installation
-\`\`\`bash
-# Clone the repository
-git clone <repository-url>
-cd tactical-ops-dashboard
+## ✨ Key Features
 
-# Install dependencies
-npm install
+### 🔐 **World Chain Integration**
+- **Native Wallet**: Seamless integration with World's native wallet system
+- **Sponsored Gas Fees**: All transactions are gas-free for users
+- **World ID Verification**: Sybil-resistant authentication using World ID
+- **MiniKit Integration**: Native World App functionality
 
-# Start development server
-npm run dev
-\`\`\`
+### 🏠 **Decentralized Property Listings**
+- **On-Chain Storage**: All property data stored permanently on blockchain
+- **Decentralized Images**: Property images stored using decentralized storage
+- **Transparent Listings**: Fully verifiable and censorship-resistant
+- **Smart Contracts**: Automated property management
 
-### First Run
-1. The application will boot with a tactical loading sequence
-2. Navigate through different sections using the sidebar
-3. Explore the Components page to see all available UI elements
-4. Check the Style Guide for implementation details
+### 💰 **Automated Escrow System**
+- **Smart Contract Escrow**: Payments held securely until check-in
+- **Automated Release**: Hosts receive payment after successful check-in
+- **Platform Fees**: Automatic fee distribution
+- **Dispute Resolution**: Built-in conflict resolution mechanisms
 
----
+### ⚖️ **Stake-Based Dispute Resolution**
+- **User Staking**: Users stake WLD tokens to participate
+- **Dispute Mechanisms**: On-chain dispute resolution system
+- **Stake Slashing**: Bad actors lose their stake
+- **Compensation**: Affected parties receive reimbursements
 
-## 📁 PROJECT STRUCTURE
+### 🔍 **Transparent Reviews**
+- **World ID Verified Reviews**: Sybil-resistant review system
+- **On-Chain Storage**: All reviews stored permanently
+- **Trust Scores**: Reputation system based on verified interactions
 
-\`\`\`
-tactical-ops-dashboard/
-├── app/                          # Next.js App Router
-│   ├── page.tsx                 # Landing page with hero section
-│   ├── dashboard/               # Main dashboard interface
-│   ├── components/              # Component showcase page
-│   ├── layout.tsx              # Root layout with theme
-│   └── globals.css             # Global styles and CSS variables
-├── components/
-│   ├── cyberpunk/              # Custom tactical components
-│   │   ├── tactical-button.tsx
-│   │   ├── tactical-card-3d.tsx
-│   │   ├── tactical-form.tsx
-│   │   └── tactical-navbar.tsx
-│   ├── ui/                     # Base UI components (shadcn/ui)
-│   └── boot-loader.tsx         # Startup animation component
-├── lib/
-│   └── utils.ts               # Utility functions
-├── STYLEGUIDE.md              # Comprehensive design system docs
-└── README.md                  # This file
-\`\`\`
+## 🚀 Technology Stack
 
----
+### **Frontend**
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **Framer Motion** - Smooth animations
+- **World MiniKit** - World App integration
 
-## 🎨 DESIGN SYSTEM
+### **Blockchain**
+- **World Chain** - Native blockchain infrastructure
+- **Solidity** - Smart contract development
+- **Hardhat** - Development and deployment
+- **Ethers.js** - Blockchain interaction
 
-### Color Palette
-- **Primary**: Orange (#f97316) - Brand color, CTAs, active states
-- **Background**: Black/Neutral-900 - Dark theme foundation  
-- **Text**: White/Neutral-300 - High contrast readability
-- **Accents**: Green (success), Red (danger), Blue (info)
+### **Smart Contracts**
+- **PropertyHosting.sol** - Property listing management
+- **PropertyBooking.sol** - Booking and payment handling
+- **DisputeResolution.sol** - Dispute resolution system
+- **SimpleStaking.sol** - User staking mechanism
 
-### Typography
-- **Font**: Geist Mono - Monospace for cyberpunk aesthetic
-- **Hierarchy**: Bold headings with tracking-wider
-- **Scale**: Responsive text sizing (text-4xl md:text-6xl)
+## 📋 Prerequisites
 
-### Components
-- **TacticalButton**: Interactive buttons with hover effects
-- **TacticalCard3D**: 3D cards with popup functionality  
-- **TacticalForm**: Dark-themed form inputs
-- **TacticalNavbar**: Responsive navigation with status indicators
-- **BootLoader**: Animated startup sequence
+- **Node.js** 18.0 or later
+- **npm** or **yarn** package manager
+- **World App** for testing
+- **World ID Developer Account**
 
----
+## 🛠️ Installation
 
-## 🧩 COMPONENT USAGE
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/chrsnikhil/WorldBNB.git
+   cd WorldBNB
+   ```
 
-### Basic Button
-\`\`\`tsx
-import { TacticalButton } from '@/components/cyberpunk/tactical-button'
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-<TacticalButton variant="primary" size="md">
-  EXECUTE COMMAND
-</TacticalButton>
-\`\`\`
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Fill in the required environment variables:
+   ```env
+   # World ID Configuration
+   NEXT_PUBLIC_WLD_APP_ID=your_app_id
+   APP_ID=your_app_id
+   
+   # Blockchain Configuration
+   NEXT_PUBLIC_PROPERTY_HOSTING_ADDRESS=contract_address
+   NEXT_PUBLIC_PROPERTY_BOOKING_ADDRESS=contract_address
+   NEXT_PUBLIC_SIMPLE_STAKING_ADDRESS=contract_address
+   NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS=contract_address
+   
+   # RPC URLs
+   NEXT_PUBLIC_RPC_URL=your_rpc_url
+   ```
 
-### 3D Interactive Card
-\`\`\`tsx
-import { TacticalCard3D } from '@/components/cyberpunk/tactical-card-3d'
+4. **Deploy smart contracts**
+   ```bash
+   npx hardhat compile
+   npx hardhat run scripts/deploy.js --network your_network
+   ```
 
-<TacticalCard3D
-  title="MISSION BRIEFING"
-  description="Classified operational data"
-  status="active"
-  glowColor="orange"
-/>
-\`\`\`
+5. **Start the development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-### Form Elements
-\`\`\`tsx
-import { TacticalForm } from '@/components/cyberpunk/tactical-form'
+6. **Open World App**
+   - Navigate to `http://localhost:3000`
+   - Open in World App for full functionality
 
-<TacticalForm>
-  <input 
-    className="w-full bg-neutral-800 border border-neutral-600 rounded px-3 py-2 text-white focus:border-orange-500"
-    placeholder="Enter access code..."
-  />
-</TacticalForm>
-\`\`\`
+## 🏗️ Project Structure
 
----
+```
+WorldBNB/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   │   ├── verify/        # World ID verification
+│   │   ├── nonce/         # Authentication nonce
+│   │   └── complete-siwe/ # SIWE completion
+│   └── page.tsx           # Main application
+├── components/            # React components
+│   ├── PropertyListingForm.tsx
+│   ├── PropertyBookingForm.tsx
+│   ├── SimpleImageUpload.tsx
+│   ├── SimpleStakingButton.tsx
+│   └── ...
+├── contracts/             # Smart contracts
+│   ├── PropertyHosting.sol
+│   ├── PropertyBooking.sol
+│   ├── DisputeResolution.sol
+│   └── SimpleStaking.sol
+├── hooks/                 # Custom React hooks
+├── abi/                   # Contract ABIs
+├── scripts/               # Deployment scripts
+└── public/                # Static assets
+```
 
-## 🎭 KEY FEATURES
+## 🔧 Smart Contracts
 
-### 🔥 Boot Sequence
-- Animated startup loader with tactical messaging
-- Progress bar with realistic boot steps
-- Smooth transition to main interface
+### **PropertyHosting.sol**
+Manages property listings with features:
+- Property creation and management
+- Host verification
+- Property status tracking
 
-### 🎮 3D Elements
-- Interactive 3D cards with React Three Fiber
-- Popup modals with spinning animations
-- Canvas-based rendering for smooth performance
+### **PropertyBooking.sol**
+Handles booking and payment logic:
+- Booking creation and confirmation
+- Escrow payment management
+- Host fund claiming
 
-### 📱 Responsive Design
-- Mobile-first approach with breakpoint system
-- Collapsible navigation for smaller screens
-- Adaptive grid layouts and typography scaling
+### **DisputeResolution.sol**
+Dispute resolution system:
+- Dispute creation and management
+- Stake slashing mechanisms
+- Compensation distribution
 
-### ⚡ Smooth Animations
-- Framer Motion integration throughout
-- Hover effects and micro-interactions
-- Page transitions and stagger animations
+### **SimpleStaking.sol**
+User staking mechanism:
+- WLD token staking
+- Stake management
+- Unstaking functionality
 
-### 🎨 Cyberpunk Aesthetic
-- Dark theme with neon orange accents
-- Monospace typography for technical feel
-- Glowing effects and status indicators
-- Military/tactical design language
+## 🎯 Usage
 
----
+### **For Guests**
+1. **Connect Wallet**: Use World App to connect your wallet
+2. **Browse Properties**: Explore available properties
+3. **Book Property**: Create booking with automated escrow
+4. **Check-in**: Confirm arrival to release payment
+5. **Leave Review**: Submit World ID verified reviews
 
-## 📖 DOCUMENTATION
+### **For Hosts**
+1. **Verify Identity**: Complete World ID verification
+2. **List Property**: Create property listing with images
+3. **Manage Bookings**: View and manage incoming bookings
+4. **Claim Funds**: Receive payments after successful check-ins
+5. **Handle Disputes**: Participate in dispute resolution
 
-### Style Guide
-See [STYLEGUIDE.md](./STYLEGUIDE.md) for comprehensive design system documentation including:
-- Complete color palette with usage guidelines
-- Typography hierarchy and implementation
-- Component API reference and examples
-- Responsive design patterns
-- Animation guidelines
-- Best practices and accessibility
+## 🔒 Security Features
 
-### Component Showcase
-Visit `/components` in the application to see:
-- Live examples of all components
-- Interactive demos and variations
-- Code snippets for implementation
-- Styling options and configurations
+- **World ID Verification**: Sybil-resistant authentication
+- **Smart Contract Escrow**: Secure payment handling
+- **Stake-based Incentives**: Economic security through staking
+- **Decentralized Storage**: Censorship-resistant data storage
+- **Transparent Transactions**: All operations verifiable on-chain
 
----
+## 🌐 World Chain Integration
 
-## 🛠️ DEVELOPMENT
+WorldBNB leverages World Chain's unique features:
 
-### Available Scripts
-\`\`\`bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript checks
-\`\`\`
+- **Native Wallet**: Seamless user experience through World's wallet
+- **Sponsored Gas**: Zero-cost transactions for users
+- **World ID**: Built-in identity verification
+- **MiniKit**: Native World App functionality
 
-### Tech Stack
-- **Framework**: Next.js 14 with App Router
-- **Styling**: Tailwind CSS with custom design system
-- **Animations**: Framer Motion
-- **3D Graphics**: React Three Fiber
-- **Icons**: Lucide React
-- **UI Components**: shadcn/ui (customized)
-- **TypeScript**: Full type safety
+## 📱 Mobile Experience
 
-### Development Guidelines
-1. **Follow the Style Guide** - Maintain consistency with the design system
-2. **Use Existing Components** - Leverage the tactical component library
-3. **Responsive First** - Test on multiple screen sizes
-4. **Performance Conscious** - Optimize animations and 3D elements
-5. **Accessibility** - Ensure keyboard navigation and screen reader support
+Optimized for mobile-first experience:
+- **Responsive Design**: Works perfectly on all screen sizes
+- **Touch-Friendly**: Optimized for mobile interactions
+- **World App Integration**: Native World App experience
+- **Offline Capability**: Core functionality works offline
 
----
+## 🧪 Testing
 
-## 🎯 CUSTOMIZATION
+```bash
+# Run smart contract tests
+npx hardhat test
 
-### Theming
-Modify CSS variables in `globals.css`:
-\`\`\`css
-:root {
-  --primary: #f97316;      /* Orange brand color */
-  --background: #000000;   /* Black background */
-  --foreground: #ffffff;   /* White text */
-  /* ... additional variables */
-}
-\`\`\`
+# Run frontend tests
+npm run test
 
-### Component Variants
-Extend existing components with new variants:
-\`\`\`tsx
-// Add new button variant
-<TacticalButton variant="stealth" className="bg-neutral-700 hover:bg-neutral-600">
-  STEALTH MODE
-</TacticalButton>
-\`\`\`
+# Run linting
+npm run lint
+```
 
-### Animation Timing
-Adjust Framer Motion configurations:
-\`\`\`tsx
-// Custom animation timing
-<motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ duration: 0.8, ease: "easeOut" }}
->
-\`\`\`
+## 🚀 Deployment
 
----
+### **Smart Contracts**
+```bash
+# Deploy to World Chain Mainnet
+npx hardhat run scripts/deploy.js --network worldchain-mainnet
 
-## 🚨 TROUBLESHOOTING
+# Deploy to World Chain Sepolia
+npx hardhat run scripts/deploy.js --network worldchain-sepolia
+```
 
-### Common Issues
+### **Frontend**
+```bash
+# Build for production
+npm run build
 
-**3D Cards Not Rendering**
-- Ensure React Three Fiber dependencies are installed
-- Check browser WebGL support
-- Verify Canvas element is properly mounted
+# Deploy to Vercel
+vercel deploy
+```
 
-**Animations Not Working**
-- Confirm Framer Motion is installed and imported
-- Check for reduced motion preferences
-- Verify component is wrapped in motion elements
-
-**Styling Issues**
-- Ensure Tailwind CSS is properly configured
-- Check for conflicting CSS classes
-- Verify custom CSS variables are defined
-
-**Performance Issues**
-- Optimize 3D elements and reduce polygon count
-- Use React.memo for expensive components
-- Implement lazy loading for heavy sections
-
----
-
-## 📄 LICENSE
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-## 🤝 CONTRIBUTING
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/tactical-enhancement`)
-3. Follow the style guide and component patterns
-4. Test thoroughly across devices and browsers
-5. Submit a pull request with detailed description
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **World Chain** for providing the blockchain infrastructure
+- **World ID** for identity verification
+- **World App** for the native wallet experience
+- **Next.js** for the React framework
+- **Tailwind CSS** for styling
+
+## 📞 Support
+
+- **Documentation**: [World Chain Docs](https://docs.worldchain.org)
+- **World ID**: [World ID Developer Portal](https://developer.worldcoin.org)
+- **Issues**: [GitHub Issues](https://github.com/chrsnikhil/WorldBNB/issues)
+
+## 🔮 Roadmap
+
+- [ ] **Multi-chain Support**: Expand to other EVM chains
+- [ ] **Advanced Dispute Resolution**: AI-powered dispute analysis
+- [ ] **Property Insurance**: Decentralized insurance integration
+- [ ] **DAO Governance**: Community-driven platform governance
+- [ ] **Mobile App**: Native mobile applications
 
 ---
 
-## 🎖️ ACKNOWLEDGMENTS
+**Built with ❤️ for the World Ecosystem**
 
-- Design inspired by military command interfaces and cyberpunk aesthetics
-- Built with modern web technologies for optimal performance
-- Accessibility-first approach for inclusive user experience
-
----
-
-*TACTICAL OPS DASHBOARD - CLASSIFIED INTERFACE SYSTEM*
-*Security Level: ALPHA | Access: AUTHORIZED PERSONNEL ONLY*
+*WorldBNB - Where trust meets technology*
