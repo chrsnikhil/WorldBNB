@@ -13,11 +13,8 @@ import ModalPortal from "../components/ModalPortal"
 import HostClaimFunds from "../components/HostClaimFunds"
 import DisputeManager from "../components/DisputeManager"
 import SimpleStakingButton from "../components/SimpleStakingButton"
-import FilecoinTest from "../components/FilecoinTest"
 import ReviewForm from "../components/ReviewForm"
 import TestReviewComponent from "../components/TestReviewComponent"
-import VerificationDebug from "../components/VerificationDebug"
-import { SynapseProvider } from "../providers/SynapseProvider"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 interface User {
@@ -416,20 +413,40 @@ function WorldBNBLanding() {
                   className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white"
                 >
                   <h2 className="text-2xl font-bold mb-2">Welcome to WorldBNB</h2>
-                  <p className="text-orange-100 mb-4">Discover unique places to stay around the world</p>
-                  <div className="flex space-x-3">
-                    <button className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all flex items-center space-x-2">
+                  <p className="text-orange-100 mb-4">The world's first decentralized property rental platform built on World Chain</p>
+                  
+                  {/* App Introduction */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1V8z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-white mb-2">What is WorldBNB?</h3>
+                        <p className="text-orange-100 text-sm leading-relaxed">
+                          WorldBNB is a revolutionary property rental platform that combines the power of World Chain's native wallet, 
+                          World ID verification, and decentralized storage. Experience secure, transparent, and trustless property 
+                          rentals with built-in dispute resolution and automated escrow payments.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all flex items-center justify-center space-x-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      <span>Search</span>
+                      <span>Explore Properties</span>
                     </button>
-                    <button className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all flex items-center space-x-2">
+                    <button className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all flex items-center justify-center space-x-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <span>Near me</span>
+                      <span>Become a Host</span>
                     </button>
                   </div>
                 </motion.div>
@@ -510,15 +527,6 @@ function WorldBNBLanding() {
                <SimpleStakingButton userAddress={user.walletAddress} />
              </motion.div>
 
-             {/* Filecoin Test Section */}
-             <motion.div
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.5, delay: 1.0 }}
-               className="mb-4"
-             >
-               <FilecoinTest />
-             </motion.div>
 
                 {/* Available Properties */}
                 <motion.div
@@ -945,11 +953,15 @@ function WorldBNBLanding() {
                   <p className="text-yellow-100 mb-4">Review your completed bookings</p>
                 </motion.div>
 
-                {/* Verification Debug Component */}
-                <VerificationDebug />
-
                 {/* Test Review Component */}
-                <TestReviewComponent onReviewSubmitted={handleReviewSubmitted} />
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="bg-neutral-800 rounded-xl p-6"
+                >
+                  <TestReviewComponent onReviewSubmitted={handleReviewSubmitted} />
+                </motion.div>
 
                 {/* Submitted Reviews */}
                 {reviews.length > 0 && (
@@ -1448,8 +1460,34 @@ function WorldBNBLanding() {
               transition={{ duration: 0.4, delay: 0.5 }}
             >
               <h1 className="text-2xl font-bold text-white">Welcome to WorldBNB</h1>
-              <p className="text-neutral-400 text-sm mt-1">Connect your wallet to get started</p>
+              <p className="text-neutral-400 text-sm mt-1">The world's first decentralized property rental platform</p>
             </motion.div>
+          </motion.div>
+
+          {/* App Introduction */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="bg-neutral-800/50 backdrop-blur-sm rounded-xl p-4 border border-neutral-700"
+          >
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1V8z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-2">What makes WorldBNB special?</h3>
+                <ul className="text-neutral-300 text-sm space-y-1">
+                  <li>• Built on World Chain with native wallet integration</li>
+                  <li>• World ID verification for sybil resistance</li>
+                  <li>• Automated escrow payments and dispute resolution</li>
+                  <li>• Decentralized storage for property images</li>
+                  <li>• Transparent, trustless property rentals</li>
+                </ul>
+              </div>
+            </div>
           </motion.div>
 
           {/* Status Indicator */}
@@ -1527,10 +1565,8 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SynapseProvider>
-        <WorldBNBLanding />
-        <GlobalModals />
-      </SynapseProvider>
+      <WorldBNBLanding />
+      <GlobalModals />
     </QueryClientProvider>
   )
 }

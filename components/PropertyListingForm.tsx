@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MiniKit } from '@worldcoin/minikit-js'
 import PropertyHostingABI from '../abi/PropertyHosting.json'
-import SimpleFileUpload from './SimpleFileUpload'
+import SimpleImageUpload from './SimpleImageUpload'
 
 interface PropertyFormData {
   name: string
@@ -116,7 +116,7 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
               formData.description,
               formData.location,
               priceInWei, // _pricePerNight in wei
-              'QmDefaultImageHash' // Always use default hash, ignore uploaded image
+              formData.imageHash || 'QmDefaultImageHash' // Use uploaded Piece CID or default
             ],
           },
         ],
@@ -159,12 +159,14 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
     }))
   }
 
-  const handleImageUploaded = (imageUrl: string) => {
-    console.log("🖼️ Image uploaded to form! URL length:", imageUrl.length);
+  const handleImageUploaded = (pieceCid: string) => {
+    console.log("📸 PropertyListingForm: Image uploaded with Piece CID:", pieceCid);
+    console.log("📸 PropertyListingForm: Updating form data with imageHash:", pieceCid);
     setFormData(prev => ({
       ...prev,
-      imageHash: imageUrl
+      imageHash: pieceCid // Store the Piece CID from Filecoin
     }))
+    console.log("📸 PropertyListingForm: Closing file upload modal");
     setShowFileUpload(false)
   }
 
@@ -274,7 +276,7 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
                     <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-sm text-green-700">Image stored on Filecoin (mock)</span>
+                    <span className="text-sm text-green-700">Image uploaded successfully</span>
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, imageHash: '' }))}
@@ -285,13 +287,17 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
                       </svg>
                     </button>
                   </div>
-                  {/* Show uploaded image preview */}
-                  <div>
-                    <img 
-                      src={formData.imageHash} 
-                      alt="Uploaded property" 
-                      className="w-full h-32 object-cover rounded-lg border"
-                    />
+                  {/* Filecoin storage info */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1V8z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm text-blue-700 font-medium">Image Storage</span>
+                    </div>
+                    <p className="text-xs text-blue-600">
+                      Image ID: {formData.imageHash.substring(0, 20)}...
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -340,11 +346,12 @@ export default function PropertyListingForm({ onPropertyListed, onClose, hostAdd
         </form>
       </motion.div>
 
-      {/* Simple File Upload Modal */}
+      {/* Image Upload Modal */}
       {showFileUpload && (
-        <SimpleFileUpload
+        <SimpleImageUpload
           onImageUploaded={handleImageUploaded}
           onClose={() => setShowFileUpload(false)}
+          userAddress={userAddress}
         />
       )}
     </motion.div>

@@ -115,58 +115,54 @@ export default function TestReviewComponent({ onReviewSubmitted }: TestReviewCom
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white mb-6"
-    >
-      <div className="flex items-center space-x-2 mb-4">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-        <h2 className="text-xl font-bold">Test Review System</h2>
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="flex items-center justify-center space-x-2 mb-2">
+          <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+          <h2 className="text-xl font-bold text-white">Test Review System</h2>
+        </div>
+        <p className="text-neutral-400 text-sm">
+          Test the review system without completing a booking. This creates a mock review for testing purposes.
+        </p>
       </div>
-      
-      <p className="text-purple-100 mb-4">
-        Test the review system without completing a booking. This creates a mock review for testing purposes.
-      </p>
 
       {/* Mock Booking Info */}
-      <div className="mb-6 p-4 bg-purple-400/20 rounded-lg">
-        <h3 className="font-semibold text-purple-100 mb-2">Test Booking #{mockBooking.id}</h3>
-        <p className="text-sm text-purple-200">Property: {mockBooking.propertyName}</p>
-        <p className="text-sm text-purple-200">Dates: {mockBooking.checkIn} - {mockBooking.checkOut}</p>
+      <div className="bg-neutral-700 rounded-lg p-4">
+        <h3 className="font-semibold text-white mb-2">Test Booking #{mockBooking.id}</h3>
+        <p className="text-sm text-neutral-300">Property: {mockBooking.propertyName}</p>
+        <p className="text-sm text-neutral-300">Dates: {mockBooking.checkIn} - {mockBooking.checkOut}</p>
       </div>
 
       {/* Verification Section */}
       {!isVerified && (
-        <div className="mb-6 p-4 bg-blue-500/20 rounded-lg">
-          <h3 className="font-semibold text-blue-100 mb-2">Step 1: Verify Your Identity</h3>
-          <p className="text-sm text-blue-200 mb-4">
+        <div className="bg-neutral-700 rounded-lg p-4">
+          <h3 className="font-semibold text-white mb-2">Step 1: Verify Your Identity</h3>
+          <p className="text-sm text-neutral-300 mb-4">
             Please verify your identity using World ID to submit a test review
           </p>
           <button
             onClick={handleVerification}
             disabled={isVerifying}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isVerifying ? "Verifying..." : "Verify with World ID"}
           </button>
           {verificationError && (
-            <p className="text-red-300 text-sm mt-2">{verificationError}</p>
+            <p className="text-red-400 text-sm mt-2">{verificationError}</p>
           )}
         </div>
       )}
 
       {/* Verification Success */}
       {isVerified && (
-        <div className="mb-6 p-4 bg-green-500/20 rounded-lg">
+        <div className="bg-green-500/20 rounded-lg p-4">
           <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-            <span className="text-green-200 font-medium">Identity Verified</span>
+            <span className="text-green-300 font-medium">Identity Verified</span>
           </div>
         </div>
       )}
@@ -176,7 +172,7 @@ export default function TestReviewComponent({ onReviewSubmitted }: TestReviewCom
         <div className="space-y-4">
           {/* Rating */}
           <div>
-            <label className="block text-sm font-medium text-purple-100 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Rating
             </label>
             <div className="flex space-x-1">
@@ -185,7 +181,7 @@ export default function TestReviewComponent({ onReviewSubmitted }: TestReviewCom
                   key={star}
                   onClick={() => setRating(star)}
                   className={`w-8 h-8 ${
-                    star <= rating ? 'text-yellow-400' : 'text-purple-300'
+                    star <= rating ? 'text-yellow-400' : 'text-neutral-400'
                   } hover:text-yellow-400 transition-colors`}
                 >
                   <svg className="w-full h-full" fill="currentColor" viewBox="0 0 20 20">
@@ -198,25 +194,25 @@ export default function TestReviewComponent({ onReviewSubmitted }: TestReviewCom
 
           {/* Comment */}
           <div>
-            <label className="block text-sm font-medium text-purple-100 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Comment (Optional)
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Share your test experience..."
-              className="w-full p-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none bg-white/10 text-white placeholder-purple-200"
+              className="w-full p-3 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none bg-neutral-800 text-white placeholder-neutral-400"
               rows={4}
               maxLength={500}
             />
-            <p className="text-xs text-purple-200 mt-1">{comment.length}/500 characters</p>
+            <p className="text-xs text-neutral-400 mt-1">{comment.length}/500 characters</p>
           </div>
 
           {/* Submit Button */}
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? "Submitting Test Review..." : "Submit Test Review"}
           </button>
@@ -224,17 +220,17 @@ export default function TestReviewComponent({ onReviewSubmitted }: TestReviewCom
       )}
 
       {/* Test Info */}
-      <div className="mt-6 p-4 bg-purple-400/10 rounded-lg">
+      <div className="bg-neutral-700/50 rounded-lg p-4">
         <div className="flex items-center space-x-2 mb-2">
-          <svg className="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
-          <span className="text-sm font-medium text-purple-200">Test Mode</span>
+          <span className="text-sm font-medium text-orange-300">Test Mode</span>
         </div>
-        <p className="text-xs text-purple-300">
+        <p className="text-xs text-neutral-400">
           This creates a test review with mock data. The review will be marked as a test review and won't affect real booking data.
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 }
